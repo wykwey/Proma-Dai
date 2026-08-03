@@ -68,16 +68,13 @@ extraResources:
     filter:
       - "**/*"
   # 教程文件（教程查看器 + 欢迎对话使用）
-  - from: ../../tutorial/tutorial-v2.md
+  - from: ../../docs/tutorial/tutorial-v2.md
     to: tutorial.md
-  # Proma 品牌 Logo 素材（品牌素材下载功能使用）
+  # Proma 品牌 Logo 素材（托盘 Template 图标使用）
   - from: resources/proma-logos
     to: proma-logos
     filter:
       - "**/*"
-  # 默认 Dock 图标（macOS app.dock.setIcon 使用）
-  - from: resources/icon.png
-    to: icon.png
 
 # ============================================
 # macOS 配置

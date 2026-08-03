@@ -15,7 +15,6 @@ import {
   Info,
   Globe,
   BookOpen,
-  Wrench,
   GraduationCap,
   ArrowLeft,
   Keyboard,
@@ -33,7 +32,6 @@ import {
   type SettingsSessionNavigation,
 } from "@/atoms/settings-tab";
 import type { SettingsTab } from "@/atoms/settings-tab";
-import { appModeAtom } from "@/atoms/app-mode";
 import { activeViewAtom } from "@/atoms/active-view";
 import { automationFormAtom } from "@/atoms/automation-atoms";
 import { hasUpdateAtom } from "@/atoms/updater";
@@ -55,10 +53,10 @@ import { ProxySettings } from "./ProxySettings";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { AboutSettings } from "./AboutSettings";
 import { PromptSettings } from "./PromptSettings";
-import { ToolSettings } from "./ToolSettings";
 import { ShortcutSettings } from "./ShortcutSettings";
 import { MigrationSettings } from "./MigrationSettings";
 import { StorageSettings } from "./StorageSettings";
+import { detectIsWindows, WINDOW_CONTROLS_INSET_RIGHT } from "@/lib/platform";
 import { useOpenSession } from '@/hooks/useOpenSession'
 
 /** 设置 Tab 定义 */
@@ -76,11 +74,6 @@ const BASE_TABS: TabItem[] = [
   { id: "proxy", label: "代理设置", icon: <Globe size={16} /> },
 ];
 
-const TOOLS_TAB: TabItem = {
-  id: "tools",
-  label: "内置工具",
-  icon: <Wrench size={16} />,
-};
 const TUTORIAL_TAB: TabItem = {
   id: "tutorial",
   label: "Proma 教程",
@@ -110,8 +103,6 @@ function renderTabContent(tab: SettingsTab): React.ReactElement {
       return <PromptSettings />;
     case "proxy":
       return <ProxySettings />;
-    case "tools":
-      return <ToolSettings />;
     case "appearance":
       return <AppearanceSettings />;
     case "about":
@@ -136,13 +127,13 @@ export function SettingsPanel({
   onClose,
 }: SettingsPanelProps): React.ReactElement {
   const [activeTab, setActiveTab] = useAtom(settingsTabAtom);
+  const isWindows = React.useMemo(() => detectIsWindows(), [])
   const channelFormDirty = useAtomValue(channelFormDirtyAtom);
   const [closeRequested, setCloseRequested] = useAtom(settingsCloseRequestedAtom);
   const [pendingSessionNavigation, setPendingSessionNavigation] = useAtom(settingsPendingSessionNavigationAtom);
   const setSettingsOpen = useSetAtom(settingsOpenAtom);
   const setActiveView = useSetAtom(activeViewAtom);
   const setAutomationForm = useSetAtom(automationFormAtom);
-  const appMode = useAtomValue(appModeAtom);
   const hasUpdate = useAtomValue(hasUpdateAtom);
   const hasEnvironmentIssues = useAtomValue(hasEnvironmentIssuesAtom);
   const [mainTabs, setMainTabs] = useAtom(tabsAtom);
@@ -240,30 +231,23 @@ export function SettingsPanel({
 
   // 工具 tab 两种模式都显示，Agent Skills / MCP 独立在侧边栏能力中心管理。
   const tabs = React.useMemo(() => {
-    if (appMode === "agent") {
-      return [
-        ...BASE_TABS,
-        TOOLS_TAB,
-        TUTORIAL_TAB,
-        SHORTCUTS_TAB,
-        ...TAIL_TABS,
-      ];
-    }
     return [
       ...BASE_TABS,
-      TOOLS_TAB,
       TUTORIAL_TAB,
       SHORTCUTS_TAB,
       ...TAIL_TABS,
     ];
-  }, [appMode]);
+  }, []);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-content-area text-foreground">
       <div
         aria-hidden="true"
-        className="titlebar-drag-region pointer-events-none h-[35px] flex-shrink-0 bg-[hsl(var(--sidebar-surface))]"
-      />
+        className="pointer-events-none relative h-[35px] flex-shrink-0 bg-[hsl(var(--sidebar-surface))]"
+      >
+        {/* 顶栏拖拽区：在 Windows 上避让右上角窗口控制按钮，避免 drag 与按钮 hitmask 重叠导致点击异常 */}
+        <div className={cn('absolute inset-0 titlebar-drag-region', isWindows && WINDOW_CONTROLS_INSET_RIGHT)} />
+      </div>
 
       {/* 主体：左导航 + 右内容 */}
       <div className="flex flex-1 min-h-0">

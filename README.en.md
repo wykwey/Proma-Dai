@@ -6,7 +6,7 @@ It is not just another chat box. Proma is meant to become a long-lived Agent wor
 
 ![Proma Poster](https://img.erlich.fun/personal-blog/uPic/pb.png)
 
-[中文 README](./README.md) | [Beginner Tutorial](./tutorial/tutorial.md) | [Open-Source Release](https://github.com/ErlichLiu/Proma/releases)
+[中文 README](./README.md) | [Beginner Tutorial](./docs/tutorial/tutorial.md) | [Open-Source Release](https://github.com/ErlichLiu/Proma/releases)
 
 ## What Proma Can Do
 
@@ -240,7 +240,7 @@ When changing packaging, verify that:
 - `electron-builder.yml` retains the `asarUnpack` rules for the Claude binary and Pi native add-ons.
 - After `bun run dist:fast` on a target platform, both Claude and Pi (when enabled) can start, call tools, and resume sessions.
 
-See [AGENTS.md](./AGENTS.md) for the full engineering conventions.
+See [AGENTS.md](./docs/AGENTS.md) for the full engineering conventions.
 
 ## Contributing
 

@@ -183,16 +183,16 @@ export function AppShell({ contextValue }: AppShellProps): React.ReactElement {
             <div className="relative z-[60] crt-sidebar">
               <LeftSidebar width={clampedLeftSidebarWidth} noTransition={isDraggingLeftSidebar} />
               {/* 侧边栏展开时显示拖拽手柄，折叠态隐藏 */}
-              {!sidebarCollapsed && (
+                  {!sidebarCollapsed && (
                 <div
                   className={cn(
-                    'absolute right-0 top-0 bottom-0 w-4 translate-x-1/2 cursor-col-resize hover:bg-primary/5 active:bg-primary/50 transition-colors z-20'
+                    'absolute right-0 top-0 bottom-0 w-4 translate-x-1/2 cursor-col-resize z-20'
                   )}
                   onMouseDown={handleLeftSidebarMouseDown}
                 />
               )}
             </div>
-            <div aria-hidden="true" className="relative z-[61] w-px flex-shrink-0 bg-border/80 dark:bg-border/70" />
+            <div aria-hidden="true" className="relative z-[61] w-px flex-shrink-0 bg-border" />
 
             {/* 中间容器：relative z-[60] 使其在 z-50 拖动区域之上 */}
             <div className="flex-1 min-w-0 relative z-[60]">
@@ -203,11 +203,11 @@ export function AppShell({ contextValue }: AppShellProps): React.ReactElement {
             {/* 右侧边栏：Agent 文件面板 */}
             {showRightPanel && (
               <div className="relative z-[60] flex items-stretch crt-sidebar">
-                <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-px bg-border/80 dark:bg-border/70" />
+                <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-px bg-border" />
                 {/* 拖拽手柄 */}
                 {isPanelOpen && (
                   <div
-                    className="absolute left-0 top-0 bottom-0 w-[8px] -translate-x-1/2 cursor-col-resize active:bg-primary/50 transition-colors z-20"
+                    className="absolute left-0 top-0 bottom-0 w-[8px] -translate-x-1/2 cursor-col-resize z-20"
                     onMouseDown={handleMouseDown}
                   />
                 )}

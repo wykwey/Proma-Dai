@@ -497,7 +497,6 @@ export class AgentOrchestrator {
       CLAUDE_CONFIG_DIR: getSdkConfigDir(),
       // Proma 的全局配置目录与当前项目状态，供 Claude Hooks 等受控子进程使用。
       PROMA_HOME: getConfigDir(),
-      PROMA_NOWLEDGE_MEM_ENABLED: '0',
     }
 
     // 认证方式按 provider 分支
@@ -1295,7 +1294,6 @@ export class AgentOrchestrator {
         workspace = ws
         sdkEnv.PROMA_WORKSPACE_DIR = getAgentWorkspacePath(ws.slug)
         sdkEnv.PROMA_WORKSPACE_SLUG = ws.slug
-        sdkEnv.PROMA_NOWLEDGE_MEM_ENABLED = getWorkspaceMcpConfig(ws.slug).servers['nowledge-mem']?.enabled ? '1' : '0'
         console.log(`[Agent 编排] 使用 ${getAgentCwdMode(sessionMeta)} cwd: ${agentCwd} (${ws.name}/${sessionId})`)
 
         if (agentRuntime === 'claude') {

@@ -10,9 +10,9 @@ Proma 是一个本地优先的 AI 桌面应用，把多模型 Chat、通用 Agen
   <source src="https://img.erlich.fun/personal-blog/uPic/%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D%20Proma.mp4" type="video/mp4">
 </video>
 
-[English README](./README.en.md) | [新手教程](./tutorial/tutorial.md) | [下载开源版](https://github.com/ErlichLiu/Proma/releases)
+[English README](./README.en.md) | [新手教程](./docs/tutorial/tutorial.md) | [下载开源版](https://github.com/ErlichLiu/Proma/releases)
 
-> **最新思考 ｜ 2026 Q2–Q3**：[勇敢地解决真实的问题 — Proactive · 个人注意力 · 团队协作](./proma-thinking/proma-2026-q2-q3-thinking.md) ｜ 往期思考：[2026 Q1](./proma-thinking/proma-2026-q1-thinking.md)
+> **最新思考 ｜ 2026 Q2–Q3**：[勇敢地解决真实的问题 — Proactive · 个人注意力 · 团队协作](./docs/proma-thinking/proma-2026-q2-q3-thinking.md) ｜ 往期思考：[2026 Q1](./docs/proma-thinking/proma-2026-q1-thinking.md)
 
 ## 现在能做什么
 
@@ -247,7 +247,7 @@ Claude 与 Pi 运行时都在主进程中作为 esbuild external 依赖运行。
 - `electron-builder.yml` 保留 Claude binary 与 Pi native addon 的 `asarUnpack` 规则。
 - 在目标平台测试 `bun run dist:fast` 后，分别验证 Claude 与 Pi（若已启用）可以启动、调用工具和恢复会话。
 
-更完整的工程约定见 [AGENTS.md](./AGENTS.md)。
+更完整的工程约定见 [AGENTS.md](./docs/AGENTS.md)。
 
 ## 贡献
 
