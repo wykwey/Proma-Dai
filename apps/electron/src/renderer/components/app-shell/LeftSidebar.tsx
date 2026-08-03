@@ -226,11 +226,11 @@ function AutomationSidebarEntry({ count, active, onClick }: AutomationSidebarEnt
         'group w-full flex items-center justify-between px-3 py-2 rounded-md text-[13px] transition-colors duration-100 titlebar-no-drag automation-entry',
         active
           ? 'automation-entry-selected bg-accent-foreground/[0.10] text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]'
-          : 'text-foreground/60 hover:bg-accent-foreground/[0.08] hover:text-foreground',
+          : 'text-foreground/76 hover:bg-accent-foreground/[0.08] hover:text-foreground',
       )}
     >
       <span className="flex items-center gap-3 min-w-0">
-        <span className={cn('flex-shrink-0 w-[18px] h-[18px] automation-entry-icon', active ? 'text-accent-foreground' : 'text-foreground/45')}>
+        <span className={cn('flex-shrink-0 w-[18px] h-[18px] automation-entry-icon', active ? 'text-accent-foreground' : 'text-foreground/64')}>
           <AlarmClock size={16} className="block" />
         </span>
         <span className="truncate">定时任务</span>
@@ -246,7 +246,7 @@ function AutomationSidebarEntry({ count, active, onClick }: AutomationSidebarEnt
             'flex h-5 min-w-[22px] items-center justify-center rounded-full px-1.5 text-[11px] font-medium tabular-nums automation-entry-badge',
             active
               ? 'bg-accent-foreground/[0.26] text-primary-foreground'
-              : 'bg-foreground/[0.045] text-foreground/[0.42] group-hover:text-foreground/65',
+              : 'bg-foreground/[0.045] text-foreground/[0.60] group-hover:text-foreground/80',
           )}
         >
           {formatAutomationCount(count)}
@@ -274,11 +274,11 @@ function SkillsSidebarEntry({ count, updateCount, active, onClick }: SkillsSideb
         'group w-full flex items-center justify-between px-3 py-2 rounded-md text-[13px] transition-colors duration-100 titlebar-no-drag',
         active
           ? 'bg-accent-foreground/[0.10] text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]'
-          : 'text-foreground/60 hover:bg-accent-foreground/[0.08] hover:text-foreground',
+          : 'text-foreground/76 hover:bg-accent-foreground/[0.08] hover:text-foreground',
       )}
     >
       <span className="flex items-center gap-3 min-w-0">
-        <span className={cn('flex-shrink-0 w-[18px] h-[18px]', active ? 'text-accent-foreground' : 'text-foreground/45')}>
+        <span className={cn('flex-shrink-0 w-[18px] h-[18px]', active ? 'text-accent-foreground' : 'text-foreground/64')}>
           <Blocks size={16} className="block" />
         </span>
         <span className="truncate">Agent 技能</span>
@@ -290,7 +290,7 @@ function SkillsSidebarEntry({ count, updateCount, active, onClick }: SkillsSideb
             ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
             : active
               ? 'bg-accent-foreground/[0.26] text-primary-foreground'
-              : 'bg-foreground/[0.045] text-foreground/[0.42] group-hover:text-foreground/65',
+              : 'bg-foreground/[0.045] text-foreground/[0.60] group-hover:text-foreground/80',
         )}
       >
         {formatAutomationCount(count)}
@@ -644,7 +644,7 @@ function RailRecentButton({
               'relative size-10 flex items-center justify-center overflow-hidden rounded-[12px] transition-colors titlebar-no-drag',
               item.active
                 ? 'bg-primary/10 text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]'
-                : 'text-foreground/55 hover:bg-foreground/[0.06] hover:text-foreground/80'
+                : 'text-foreground/72 hover:bg-foreground/[0.06] hover:text-foreground/90'
             )}
           >
             <span
@@ -654,9 +654,9 @@ function RailRecentButton({
               )}
             />
             {item.isAutomation
-              ? <Clock size={14} className="text-foreground/40" />
+              ? <Clock size={14} className="text-foreground/60" />
               : item.isDelegation
-                ? <GitBranch size={14} className="text-foreground/40" />
+                ? <GitBranch size={14} className="text-foreground/60" />
                 : <span className="text-[13px] font-semibold leading-none">{item.initial}</span>
             }
           </button>
@@ -2467,7 +2467,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
                 type="button"
                 aria-label="展开侧边栏"
                 onClick={() => setSidebarCollapsed(false)}
-                className="size-10 flex items-center justify-center rounded-[12px] text-foreground/60 bg-muted hover:bg-foreground/[0.08] hover:text-foreground transition-colors titlebar-no-drag"
+                className="size-10 flex items-center justify-center rounded-[12px] text-foreground/76 bg-muted hover:bg-foreground/[0.08] hover:text-foreground transition-colors titlebar-no-drag"
               >
                 <PanelLeftOpen size={17} />
               </button>
@@ -2489,7 +2489,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
                 'relative size-10 flex items-center justify-center rounded-[12px] transition-colors titlebar-no-drag',
                 mode === 'agent'
                   ? 'bg-primary/10 text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]'
-                  : 'text-foreground/45 hover:bg-foreground/[0.06] hover:text-foreground/75'
+                  : 'text-foreground/64 hover:bg-foreground/[0.06] hover:text-foreground/88'
               )}
             >
               <Bot size={18} />
@@ -2506,7 +2506,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
                   'relative size-10 flex items-center justify-center rounded-[12px] transition-colors titlebar-no-drag',
                   mode === 'chat'
                     ? 'bg-primary/10 text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]'
-                    : 'text-foreground/45 hover:bg-foreground/[0.06] hover:text-foreground/75'
+                    : 'text-foreground/64 hover:bg-foreground/[0.06] hover:text-foreground/88'
                 )}
               >
                 <MessageSquare size={17} />
@@ -2526,7 +2526,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
                 type="button"
                 aria-label="搜索"
                 onClick={() => setSearchDialogOpen(true)}
-                className="size-10 flex items-center justify-center rounded-[12px] text-foreground/45 sidebar-control-surface hover:text-foreground/70 transition-[background-color,color] duration-150 titlebar-no-drag"
+                className="size-10 flex items-center justify-center rounded-[12px] text-foreground/64 sidebar-control-surface hover:text-foreground/84 transition-[background-color,color] duration-150 titlebar-no-drag"
               >
                 <Search size={16} />
               </button>
@@ -2544,7 +2544,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
                   'relative size-10 flex items-center justify-center rounded-[12px] transition-colors titlebar-no-drag border',
                   activeView === 'planning'
                     ? 'border-primary/80 bg-primary text-primary-foreground shadow-sm'
-                    : 'border-border/45 bg-foreground/[0.025] text-foreground/45 hover:border-border/70 hover:bg-foreground/[0.045] hover:text-primary',
+                    : 'border-border/45 bg-foreground/[0.025] text-foreground/64 hover:border-border/70 hover:bg-foreground/[0.045] hover:text-primary',
                 )}
               >
                 <AlarmClock size={16} />
@@ -2581,7 +2581,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
                     'relative size-10 flex items-center justify-center rounded-[12px] transition-colors titlebar-no-drag border',
                     activeView === 'agent-skills'
                       ? 'border-primary/80 bg-primary text-primary-foreground shadow-sm'
-                      : 'border-border/45 bg-foreground/[0.025] text-foreground/45 hover:border-border/70 hover:bg-foreground/[0.045] hover:text-primary',
+                      : 'border-border/45 bg-foreground/[0.025] text-foreground/64 hover:border-border/70 hover:bg-foreground/[0.045] hover:text-primary',
                   )}
                 >
                   <Blocks size={16} />
@@ -2683,7 +2683,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
           <TooltipTrigger asChild>
             <button
               onClick={() => setSearchDialogOpen(true)}
-              className="mt-2 size-10 flex-shrink-0 flex items-center justify-center rounded-[10px] text-foreground/40 sidebar-control-surface hover:text-foreground/60 transition-[background-color,color] duration-150 titlebar-no-drag"
+              className="mt-2 size-10 flex-shrink-0 flex items-center justify-center rounded-[10px] text-foreground/60 sidebar-control-surface hover:text-foreground/76 transition-[background-color,color] duration-150 titlebar-no-drag"
             >
               <Search size={14} />
             </button>
@@ -2695,7 +2695,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
             <button
               onClick={() => setSidebarCollapsed(true)}
               className={cn(
-                'sidebar-collapse-button mt-2 size-10 flex-shrink-0 flex items-center justify-center rounded-[10px] text-foreground/40 sidebar-control-surface hover:text-foreground/60 titlebar-no-drag transition-[background-color,color] duration-150'
+                'sidebar-collapse-button mt-2 size-10 flex-shrink-0 flex items-center justify-center rounded-[10px] text-foreground/60 sidebar-control-surface hover:text-foreground/76 titlebar-no-drag transition-[background-color,color] duration-150'
               )}
             >
               <PanelLeftClose size={14} />
@@ -2731,7 +2731,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin titlebar-no-drag">
           {pinnedConversations.length > 0 && (
             <div className="pt-2 pb-1 flex-shrink-0 titlebar-no-drag">
-              <div className="pl-[18px] pr-3.5 pb-1 text-[13px] font-medium leading-[18px] text-foreground/40 select-none">
+              <div className="pl-[18px] pr-3.5 pb-1 text-[13px] font-medium leading-[18px] text-foreground/60 select-none">
                 置顶
               </div>
               <div>
@@ -2759,11 +2759,11 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
           )}
 
           <div className="group/chat-section relative flex items-center px-2 pt-2 pb-1 flex-shrink-0">
-            <span className="ml-[4px] px-1.5 text-[13px] font-medium leading-[18px] text-foreground/40 select-none">对话</span>
+            <span className="ml-[4px] px-1.5 text-[13px] font-medium leading-[18px] text-foreground/60 select-none">对话</span>
             {newChatShortcutLabel && (
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2 whitespace-nowrap text-[10px] font-medium text-foreground/35 transition-opacity group-hover/chat-section:opacity-0"
+                className="pointer-events-none absolute right-9 top-1/2 -translate-y-1/2 whitespace-nowrap text-[10px] font-medium text-foreground/56 transition-opacity group-hover/chat-section:opacity-0"
               >
                 {newChatShortcutLabel} 新建对话
               </span>
@@ -2774,7 +2774,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
                   type="button"
                   aria-label="新建对话"
                   onClick={() => { void createChat() }}
-                  className="absolute right-2 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-foreground/30 transition-colors hover:bg-foreground/[0.055] hover:text-foreground/65 titlebar-no-drag"
+                  className="absolute right-2 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-foreground/52 transition-colors hover:bg-foreground/[0.055] hover:text-foreground/80 titlebar-no-drag"
                 >
                   <Plus size={13} />
                 </button>
@@ -2788,7 +2788,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
           <div className="px-2 pb-3">
             {conversationGroups.map((group) => (
               <div key={group.label} className="mb-1">
-                <div className="ml-[4px] px-1.5 pt-2 pb-1 text-[11px] font-medium text-foreground/40 select-none">
+                <div className="ml-[4px] px-1.5 pt-2 pb-1 text-[11px] font-medium text-foreground/60 select-none">
                   {group.label}
                 </div>
                 <div className="flex flex-col gap-0.5">
@@ -2816,7 +2816,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin titlebar-no-drag">
           {pinnedAgentSessions.length > 0 && (
             <div className="pt-2 pb-1 flex-shrink-0 titlebar-no-drag">
-              <div className="pl-[18px] pr-3.5 pb-1 text-[13px] font-medium leading-[18px] text-foreground/40 select-none">
+              <div className="pl-[18px] pr-3.5 pb-1 text-[13px] font-medium leading-[18px] text-foreground/60 select-none">
                 置顶
               </div>
               <div>
@@ -2890,14 +2890,14 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
 
           {/* 下区标题：项目历史 */}
           <div className="px-2 pt-2 pb-1 flex items-center justify-between flex-shrink-0">
-            <span className="px-1.5 text-[11px] font-medium text-foreground/40 select-none">项目</span>
+            <span className="px-1.5 text-[11px] font-medium text-foreground/60 select-none">项目</span>
             <div className="flex items-center gap-0.5">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
                     onClick={() => void handleCreateProjectFromFolder()}
-                    className="size-6 flex items-center justify-center rounded-md text-foreground/35 hover:bg-foreground/[0.06] hover:text-foreground/60 transition-colors titlebar-no-drag"
+                    className="size-6 flex items-center justify-center rounded-md text-foreground/56 hover:bg-foreground/[0.06] hover:text-foreground/76 transition-colors titlebar-no-drag"
                     aria-label="从本地文件夹创建项目"
                   >
                     <FolderInput size={13} />
@@ -2910,7 +2910,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
                   <button
                     type="button"
                     onClick={handleStartCreateProject}
-                    className="size-6 flex items-center justify-center rounded-md text-foreground/35 hover:bg-foreground/[0.06] hover:text-foreground/60 transition-colors titlebar-no-drag"
+                    className="size-6 flex items-center justify-center rounded-md text-foreground/56 hover:bg-foreground/[0.06] hover:text-foreground/76 transition-colors titlebar-no-drag"
                     aria-label="新建空白项目"
                   >
                     <Plus size={13} />
@@ -2925,7 +2925,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
           <div className="px-2 pb-3">
             {creatingProject && (
               <div className="flex items-center gap-2 px-2 py-1.5 mb-1 rounded-md bg-foreground/[0.04]">
-                <FolderOpen size={14} className="flex-shrink-0 text-foreground/40" />
+                <FolderOpen size={14} className="flex-shrink-0 text-foreground/60" />
                 <input
                   ref={newProjectInputRef}
                   value={newProjectName}
@@ -2999,7 +2999,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
           {/* 归档视图标题栏 */}
           {viewMode === 'archived' && (
             <div className="px-6 pt-3 pb-1">
-              <div className="text-[12px] font-medium text-foreground/40">
+              <div className="text-[12px] font-medium text-foreground/60">
                 已归档{mode === 'agent' ? '会话' : '对话'}
               </div>
             </div>
@@ -3011,7 +3011,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
               /* Chat 归档：对话按日期分组 */
               conversationGroups.map((group) => (
                 <div key={group.label} className="mb-1">
-                  <div className="px-3 pt-2 pb-1 text-[11px] font-medium text-foreground/40 select-none">
+                  <div className="px-3 pt-2 pb-1 text-[11px] font-medium text-foreground/60 select-none">
                     {group.label}
                   </div>
                   <div className="flex flex-col gap-0.5">
@@ -3037,7 +3037,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
               /* Agent 模式归档：Agent 会话按日期分组，含委派树 */
               archivedAgentSessionTrees.map((group) => (
                 <div key={group.label} className="mb-1">
-                  <div className="px-3 pt-2 pb-1 text-[11px] font-medium text-foreground/40 select-none">
+                  <div className="px-3 pt-2 pb-1 text-[11px] font-medium text-foreground/60 select-none">
                     {group.label}
                   </div>
                   <div className="flex flex-col gap-0.5">
@@ -3116,18 +3116,18 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
             {mode === 'chat' && archivedConversationCount > 0 && (
               <button
                 onClick={() => setViewMode('archived')}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-[10px] text-[12px] text-foreground/40 hover:bg-foreground/[0.04] hover:text-foreground/60 transition-colors titlebar-no-drag"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-[10px] text-[12px] text-foreground/60 hover:bg-foreground/[0.04] hover:text-foreground/76 transition-colors titlebar-no-drag"
               >
-                <Archive size={13} className="text-foreground/30" />
+                <Archive size={13} className="text-foreground/52" />
                 <span>已归档 ({archivedConversationCount})</span>
               </button>
             )}
             {mode === 'agent' && archivedAgentSessionCount > 0 && (
               <button
                 onClick={() => setViewMode('archived')}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-[10px] text-[12px] text-foreground/40 hover:bg-foreground/[0.04] hover:text-foreground/60 transition-colors titlebar-no-drag"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-[10px] text-[12px] text-foreground/60 hover:bg-foreground/[0.04] hover:text-foreground/76 transition-colors titlebar-no-drag"
               >
-                <Archive size={13} className="text-foreground/30" />
+                <Archive size={13} className="text-foreground/52" />
                 <span>已归档 ({archivedAgentSessionCount})</span>
               </button>
             )}
@@ -3135,9 +3135,9 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
         ) : (
           <button
             onClick={() => setViewMode('active')}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-[10px] text-[12px] text-foreground/60 bg-foreground/[0.04] hover:bg-foreground/[0.07] hover:text-foreground/80 transition-colors titlebar-no-drag"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-[10px] text-[12px] text-foreground/76 bg-foreground/[0.04] hover:bg-foreground/[0.07] hover:text-foreground/90 transition-colors titlebar-no-drag"
           >
-            <ArrowLeft size={13} className="text-foreground/50" />
+            <ArrowLeft size={13} className="text-foreground/70" />
             <span>返回活跃{mode === 'agent' ? '会话' : '对话'}</span>
           </button>
         )}
@@ -3145,7 +3145,7 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
 
       {/* 底部：用户资料 + 设置入口 */}
       <div className="px-3 pb-3">
-        <div className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-foreground/70 transition-colors titlebar-no-drag hover:bg-foreground/[0.04] hover:text-foreground">
+        <div className="flex items-center gap-2 rounded-[10px] px-3 py-2 text-foreground/84 transition-colors titlebar-no-drag hover:bg-foreground/[0.04] hover:text-foreground">
           <button
             onClick={handleOpenSettings}
             className="min-w-0 flex flex-1 items-center gap-3 text-left"
@@ -3168,9 +3168,9 @@ export function LeftSidebar({ width, noTransition }: LeftSidebarProps): React.Re
             type="button"
             aria-label="打开设置"
             onClick={handleOpenSettings}
-            className="relative flex size-7 flex-shrink-0 items-center justify-center rounded-[8px] text-foreground/40 transition-colors hover:bg-foreground/[0.05] hover:text-foreground/70"
+            className="relative flex size-7 flex-shrink-0 items-center justify-center rounded-[8px] text-foreground/60 transition-colors hover:bg-foreground/[0.05] hover:text-foreground/84"
           >
-            <div className="relative flex-shrink-0 text-foreground/40">
+            <div className="relative flex-shrink-0 text-foreground/60">
               <Settings size={16} />
               {hasEnvironmentIssues && (
                 <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500" />
@@ -3352,7 +3352,7 @@ function SessionItemActions({
       <span
         title={`最后更新：${new Date(updatedAt).toLocaleString('zh-CN')}`}
         className={cn(
-          'absolute inset-y-0 right-0 block w-full overflow-hidden whitespace-nowrap text-right text-[11px] leading-[18px] tabular-nums text-foreground/35 transition-opacity duration-100',
+          'absolute inset-y-0 right-0 block w-full overflow-hidden whitespace-nowrap text-right text-[11px] leading-[18px] tabular-nums text-foreground/56 transition-opacity duration-100',
           forceVisible ? 'opacity-0' : 'opacity-100 group-hover:opacity-0',
         )}
       >
@@ -3372,7 +3372,7 @@ function SessionItemActions({
               'p-0.5 rounded transition-colors',
               pinned
                 ? 'text-primary/60 hover:bg-foreground/[0.08] hover:text-primary'
-                : 'text-foreground/30 hover:bg-foreground/[0.08] hover:text-foreground/60',
+                : 'text-foreground/52 hover:bg-foreground/[0.08] hover:text-foreground/76',
             )}
             onClick={onTogglePin}
           >
@@ -3389,8 +3389,8 @@ function SessionItemActions({
               archiveConfirming
                 ? 'text-destructive bg-destructive/10'
                 : archived
-                  ? 'text-foreground/60 hover:bg-foreground/[0.08]'
-                  : 'text-foreground/30 hover:bg-foreground/[0.08] hover:text-foreground/60',
+                  ? 'text-foreground/76 hover:bg-foreground/[0.08]'
+                  : 'text-foreground/52 hover:bg-foreground/[0.08] hover:text-foreground/76',
             )}
             onClick={handleArchiveClick}
           >
@@ -3401,8 +3401,8 @@ function SessionItemActions({
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
-                'p-0.5 rounded text-foreground/30 hover:bg-foreground/[0.08] hover:text-foreground/60 transition-colors',
-                'data-[state=open]:bg-foreground/[0.08] data-[state=open]:text-foreground/60',
+                'p-0.5 rounded text-foreground/52 hover:bg-foreground/[0.08] hover:text-foreground/76 transition-colors',
+                'data-[state=open]:bg-foreground/[0.08] data-[state=open]:text-foreground/76',
               )}
             >
               <MoreHorizontal size={14} />
@@ -3567,7 +3567,7 @@ const ConversationItem = React.memo(function ConversationItem({
             ) : (
               <div className={cn(
                 'truncate text-[13px] leading-[18px] flex items-center gap-1.5',
-                active ? 'text-foreground' : 'text-foreground/80'
+                active ? 'text-foreground' : 'text-foreground/90'
               )}>
                 {/* 置顶标记 */}
                 {showPinIcon && (
@@ -3632,7 +3632,7 @@ const SESSION_ACCENT_INDICATOR_CLASS: Record<SessionLeftAccent, string> = {
 }
 
 const DELEGATION_STATUS_ICON_CLASS: Record<SessionIndicatorStatus, string> = {
-  idle: 'text-foreground/40',
+  idle: 'text-foreground/60',
   running: 'text-blue-500',
   blocked: 'text-orange-500',
   completed: 'text-green-500',
@@ -3831,13 +3831,13 @@ const AgentSessionItem = React.memo(function AgentSessionItem({
             ) : (
               <div className={cn(
                 'truncate text-[13px] leading-[18px] flex items-center gap-1.5',
-                active ? 'text-foreground' : 'text-foreground/80'
+                active ? 'text-foreground' : 'text-foreground/90'
               )}>
                 {showPinIcon && (
                   <Pin size={11} className="flex-shrink-0 text-primary/60" />
                 )}
                 {session.sourceAutomationId && !session.sourceDelegationId && (
-                  <Clock size={11} className="flex-shrink-0 text-foreground/40" />
+                  <Clock size={11} className="flex-shrink-0 text-foreground/60" />
                 )}
                 {session.sourceDelegationId && (
                   <GitBranch size={11} className={cn('flex-shrink-0', DELEGATION_STATUS_ICON_CLASS[indicatorStatus])} />
@@ -3876,7 +3876,7 @@ const AgentSessionItem = React.memo(function AgentSessionItem({
                       'flex-shrink-0 inline-flex size-6 -my-1 items-center justify-center rounded transition-colors',
                       session.starred
                         ? 'text-amber-500 hover:text-amber-500'
-                        : cn('text-foreground/45 hover:bg-foreground/[0.055] hover:text-foreground/70', rowHovered ? 'opacity-100' : 'opacity-0'),
+                        : cn('text-foreground/64 hover:bg-foreground/[0.055] hover:text-foreground/84', rowHovered ? 'opacity-100' : 'opacity-0'),
                     )}
                   >
                     <Star size={13} fill={session.starred ? 'currentColor' : 'none'} />
@@ -3888,7 +3888,7 @@ const AgentSessionItem = React.memo(function AgentSessionItem({
                   </span>
                 )}
                 {delegationSummary && (
-                  <span className="flex-shrink-0 text-[11px] leading-4 text-foreground/45">
+                  <span className="flex-shrink-0 text-[11px] leading-4 text-foreground/64">
                     {delegationSummary.completed}/{delegationSummary.total}
                   </span>
                 )}
@@ -3918,7 +3918,7 @@ const AgentSessionItem = React.memo(function AgentSessionItem({
                       event.stopPropagation()
                       preview.closeNow()
                     }}
-                    className="session-delegation-toggle flex-shrink-0 inline-flex size-6 -my-1 items-center justify-center rounded text-foreground/45 hover:bg-foreground/[0.055] hover:text-foreground/70 transition-colors"
+                    className="session-delegation-toggle flex-shrink-0 inline-flex size-6 -my-1 items-center justify-center rounded text-foreground/64 hover:bg-foreground/[0.055] hover:text-foreground/84 transition-colors"
                   >
                     <ChevronRight
                       size={11}
@@ -4218,7 +4218,7 @@ const AgentProjectGroupItem = React.memo(function AgentProjectGroupItem({
           draggable
           onDragStart={(e) => onDragStart(e, group.workspace.id)}
           title="拖拽排序"
-          className="absolute -left-0.5 top-1/2 z-10 flex size-[18px] -translate-y-1/2 cursor-grab items-center justify-center text-foreground/20 opacity-0 transition-opacity group-hover/project:opacity-100 active:cursor-grabbing"
+          className="absolute -left-0.5 top-1/2 z-10 flex size-[18px] -translate-y-1/2 cursor-grab items-center justify-center text-foreground/38 opacity-0 transition-opacity group-hover/project:opacity-100 active:cursor-grabbing"
           aria-hidden="true"
         >
           <GripVertical size={12} />
@@ -4230,10 +4230,10 @@ const AgentProjectGroupItem = React.memo(function AgentProjectGroupItem({
               'relative flex-1 min-w-0 flex items-center gap-1 pl-[9px] pr-1 py-1 rounded-md text-left titlebar-no-drag group-hover/project:pl-4 group-hover/project:pr-11',
               isCurrent
                 ? 'agent-project-item-current text-foreground'
-                : 'text-foreground/65',
+                : 'text-foreground/80',
             )}
           >
-            <FolderOpen size={13} className="flex-shrink-0 text-foreground/40" />
+            <FolderOpen size={13} className="flex-shrink-0 text-foreground/60" />
             <input
               ref={workspaceEditRef}
               value={workspaceEditName}
@@ -4258,18 +4258,18 @@ const AgentProjectGroupItem = React.memo(function AgentProjectGroupItem({
               isAutomationGroup ? 'pr-1' : 'pr-12',
               isCurrent
                 ? 'agent-project-item-current text-foreground'
-                : 'text-foreground/65 hover:text-foreground/88',
+                : 'text-foreground/80 hover:text-foreground/88',
             )}
           >
             {isAutomationGroup ? (
-              <Clock size={13} className="flex-shrink-0 text-foreground/40" />
+              <Clock size={13} className="flex-shrink-0 text-foreground/60" />
             ) : (
               <>
-                <FolderOpen size={13} className="flex-shrink-0 text-foreground/40 group-hover/project:hidden" />
+                <FolderOpen size={13} className="flex-shrink-0 text-foreground/60 group-hover/project:hidden" />
                 <ChevronRight
                   size={13}
                   className={cn(
-                    'hidden flex-shrink-0 text-foreground/40 transition-transform duration-150 group-hover/project:block',
+                    'hidden flex-shrink-0 text-foreground/60 transition-transform duration-150 group-hover/project:block',
                     collapsed ? '-rotate-90' : 'rotate-90',
                   )}
                 />
@@ -4292,7 +4292,7 @@ const AgentProjectGroupItem = React.memo(function AgentProjectGroupItem({
               <ChevronRight
                 size={12}
                 className={cn(
-                  'flex-shrink-0 text-foreground/30 transition-transform duration-150',
+                  'flex-shrink-0 text-foreground/52 transition-transform duration-150',
                   collapsed ? '-rotate-90' : 'rotate-90',
                 )}
               />
@@ -4319,7 +4319,7 @@ const AgentProjectGroupItem = React.memo(function AgentProjectGroupItem({
                 e.stopPropagation()
                 void onNewSession(group.workspace.id)
               }}
-              className="absolute right-0 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-foreground/30 transition-colors hover:bg-foreground/[0.055] hover:text-foreground/65 titlebar-no-drag"
+              className="absolute right-0 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-foreground/52 transition-colors hover:bg-foreground/[0.055] hover:text-foreground/80 titlebar-no-drag"
             >
               <Plus size={13} />
             </button>
@@ -4336,7 +4336,7 @@ const AgentProjectGroupItem = React.memo(function AgentProjectGroupItem({
             <button
               type="button"
               aria-label="项目菜单"
-              className="absolute right-5 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-foreground/30 opacity-0 transition-colors hover:bg-foreground/[0.055] hover:text-foreground/60 group-hover/project:opacity-100 data-[state=open]:opacity-100 titlebar-no-drag"
+              className="absolute right-5 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-foreground/52 opacity-0 transition-colors hover:bg-foreground/[0.055] hover:text-foreground/76 group-hover/project:opacity-100 data-[state=open]:opacity-100 titlebar-no-drag"
             >
               <MoreHorizontal size={13} />
             </button>
@@ -4470,7 +4470,7 @@ const AgentProjectGroupItem = React.memo(function AgentProjectGroupItem({
                 <button
                   type="button"
                   onClick={() => onShowMore(group.workspace.id)}
-                  className="w-full text-left px-1.5 py-1 rounded-md text-[12px] text-foreground/35 hover:bg-foreground/[0.03] hover:text-foreground/60 transition-colors titlebar-no-drag"
+                  className="w-full text-left px-1.5 py-1 rounded-md text-[12px] text-foreground/56 hover:bg-foreground/[0.03] hover:text-foreground/76 transition-colors titlebar-no-drag"
                 >
                   显示更多
                 </button>
@@ -4480,14 +4480,14 @@ const AgentProjectGroupItem = React.memo(function AgentProjectGroupItem({
                 <button
                   type="button"
                   onClick={() => onCollapseExtra(group.workspace.id)}
-                  className="w-full text-left px-1.5 py-1 rounded-md text-[12px] text-foreground/35 hover:bg-foreground/[0.03] hover:text-foreground/60 transition-colors titlebar-no-drag"
+                  className="w-full text-left px-1.5 py-1 rounded-md text-[12px] text-foreground/56 hover:bg-foreground/[0.03] hover:text-foreground/76 transition-colors titlebar-no-drag"
                 >
                   收起
                 </button>
               )}
             </div>
           ) : (
-            <div className="px-1.5 py-0.5 text-[12px] text-foreground/22 select-none">
+            <div className="px-1.5 py-0.5 text-[12px] text-foreground/56 select-none">
               暂无会话
             </div>
           )

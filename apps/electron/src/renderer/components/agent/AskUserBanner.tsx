@@ -282,7 +282,7 @@ export function AskUserBanner({ sessionId }: AskUserBannerProps): React.ReactEle
             )}
             <button
               type="button"
-              className="size-5 flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 transition-colors"
+              className="size-5 flex items-center justify-center rounded-md text-muted-foreground/78 hover:text-foreground hover:bg-muted/60 transition-colors"
               onClick={handleDismiss}
               title="关闭并终止 Agent"
             >
@@ -352,7 +352,7 @@ export function AskUserBanner({ sessionId }: AskUserBannerProps): React.ReactEle
 
       {/* 底部 */}
       <div className="flex items-center justify-end gap-1.5 px-4 pb-3">
-        <span className="text-[10px] text-muted-foreground/40 mr-auto">
+        <span className="text-[10px] text-muted-foreground/68 mr-auto">
           ↑↓ 选择 · Enter {isLastTab ? '确认' : '下一个'}
         </span>
         {isLastTab && (
@@ -452,13 +452,13 @@ function QuestionCard({
                 flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all outline-none text-left
                 ${isSelected
                   ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-muted/50 text-foreground/80 hover:bg-muted'
+                  : 'bg-muted/50 text-foreground/90 hover:bg-muted'
                 }
                 ${isFocused ? 'ring-2 ring-primary/50 ring-offset-1 ring-offset-card' : ''}
               `}
               onClick={() => onToggleOption(option.label)}
             >
-              <span className={`text-[10px] shrink-0 ${isSelected ? 'text-primary-foreground/60' : 'text-muted-foreground/50'}`}>
+              <span className={`text-[10px] shrink-0 ${isSelected ? 'text-primary-foreground/60' : 'text-muted-foreground/78'}`}>
                 {idx + 1}
               </span>
               <span className="font-medium">{option.label}</span>
@@ -478,13 +478,13 @@ function QuestionCard({
             flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all outline-none text-left
             ${answer.showCustom
               ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'bg-muted/50 text-foreground/80 hover:bg-muted'
+              : 'bg-muted/50 text-foreground/90 hover:bg-muted'
             }
             ${focusedIndex === optionCount ? 'ring-2 ring-primary/50 ring-offset-1 ring-offset-card' : ''}
           `}
           onClick={onToggleCustom}
         >
-          <span className={`text-[10px] shrink-0 ${answer.showCustom ? 'text-primary-foreground/60' : 'text-muted-foreground/50'}`}>
+          <span className={`text-[10px] shrink-0 ${answer.showCustom ? 'text-primary-foreground/60' : 'text-muted-foreground/78'}`}>
             {optionCount + 1}
           </span>
           <span className="font-medium">其他...</span>
@@ -497,7 +497,7 @@ function QuestionCard({
           <input
             ref={customInputRef}
             type="text"
-            className="w-full px-3 py-2 pr-9 rounded-lg text-xs bg-muted/40 focus:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/40 transition-colors"
+            className="w-full px-3 py-2 pr-9 rounded-lg text-xs bg-muted/40 focus:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/68 transition-colors"
             placeholder="输入自定义答案..."
             value={answer.customText}
             onChange={(e) => onCustomTextChange(e.target.value)}

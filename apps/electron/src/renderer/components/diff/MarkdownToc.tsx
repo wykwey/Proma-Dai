@@ -53,14 +53,14 @@ export function MarkdownToc({ containerRef, contentKey, enabled, onOpenChange }:
       className="flex flex-col w-52 shrink-0 self-start max-h-full m-2 rounded-lg bg-muted/40"
     >
       <div className="flex items-center gap-2 px-3 pt-2 pb-1">
-        <div className="min-w-0 flex-1 text-[11px] font-medium text-foreground/40 select-none">目录</div>
+        <div className="min-w-0 flex-1 text-[11px] font-medium text-foreground/60 select-none">目录</div>
         {onOpenChange && (
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="flex size-7 shrink-0 items-center justify-center rounded-md text-foreground/45 hover:bg-foreground/[0.06] hover:text-foreground/70"
+                className="flex size-7 shrink-0 items-center justify-center rounded-md text-foreground/64 hover:bg-foreground/[0.06] hover:text-foreground/84"
                 aria-label="收起目录"
               >
                 <ChevronLeft className="size-3.5" />
@@ -86,7 +86,7 @@ export function MarkdownToc({ containerRef, contentKey, enabled, onOpenChange }:
                 'border-l-2 border-transparent',
                 active
                   ? 'border-primary text-foreground font-medium bg-foreground/[0.04]'
-                  : 'text-foreground/55 hover:text-foreground/80 hover:bg-foreground/[0.03]',
+                  : 'text-foreground/72 hover:text-foreground/90 hover:bg-foreground/[0.03]',
               )}
             >
               {heading.text}

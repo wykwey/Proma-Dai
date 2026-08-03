@@ -977,7 +977,7 @@ function FileTreeItem({
           />
           {children.length === 0 && childrenLoaded && (
             <div
-              className="text-[11px] text-muted-foreground/50 py-1"
+              className="text-[11px] text-muted-foreground/78 py-1"
               style={{ paddingLeft: paddingLeft + 24 }}
             >
               空文件夹

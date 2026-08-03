@@ -134,8 +134,8 @@ export function TabBarItem({
         ) : (
           <span className="flex-1 min-w-0 truncate text-left flex items-center gap-1">
             {showAgentSpinner && <Spinner size="sm" className="mr-2 shrink-0 text-primary/70" />}
-            {isAutomation && <Clock className="size-3 shrink-0 text-foreground/40" />}
-            {isDelegation && !isAutomation && <GitBranch className="size-3 shrink-0 text-foreground/40" />}
+            {isAutomation && <Clock className="size-3 shrink-0 text-foreground/60" />}
+            {isDelegation && !isAutomation && <GitBranch className="size-3 shrink-0 text-foreground/60" />}
             <span className="min-w-0 truncate">{title}</span>
           </span>
         )}

@@ -132,7 +132,7 @@ export const DiffView = React.memo(function DiffView({ oldContent, newContent, f
             <p className="text-[12px]">
               旧文件 {oldLines.toLocaleString()} 行，新文件 {newLines.toLocaleString()} 行
             </p>
-            <p className="text-[12px] text-muted-foreground/60 mt-2">
+            <p className="text-[12px] text-muted-foreground/85 mt-2">
               请使用命令行 <code className="px-1 py-0.5 rounded bg-muted text-[11px]">git diff</code> 查看
             </p>
           </div>

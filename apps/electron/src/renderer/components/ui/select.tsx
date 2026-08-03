@@ -20,7 +20,7 @@ const SelectTrigger = React.forwardRef<
       // 与 Input 同款 hairline + hover 加深 + 双层 focus glow，保证表单字段视觉一致
       "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-border/60 bg-background/40 px-3 py-2 text-sm shadow-xs ring-offset-background",
       "transition-[border-color,box-shadow,background-color] duration-150 ease-out",
-      "data-[placeholder]:text-muted-foreground/80",
+      "data-[placeholder]:text-muted-foreground/92",
       "hover:border-border",
       "focus:outline-none focus:border-ring focus:bg-background focus:ring-4 focus:ring-ring/15",
       "disabled:cursor-not-allowed disabled:opacity-50",

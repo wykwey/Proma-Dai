@@ -100,8 +100,8 @@ export function MessageHeader({
         </div>
       )}
       <div className="flex flex-col justify-between h-[35px]">
-        {model && <span className="text-sm font-semibold text-foreground/60 leading-none">{model}</span>}
-        {time && <span className="message-time text-[10px] text-foreground/[0.38] leading-none">{time}</span>}
+        {model && <span className="text-sm font-semibold text-foreground/76 leading-none">{model}</span>}
+        {time && <span className="message-time text-[10px] text-foreground/[0.56] leading-none">{time}</span>}
       </div>
       {children}
     </div>
@@ -150,7 +150,7 @@ export function MessageActions({
   return (
     <div
       className={cn(
-        'flex items-center gap-2.5 text-muted-foreground/60 hover:text-muted-foreground/90 transition-colors duration-200',
+        'flex items-center gap-2.5 text-muted-foreground/85 hover:text-muted-foreground/90 transition-colors duration-200',
         className
       )}
       {...props}
@@ -743,8 +743,8 @@ export const UserMessageContent = React.memo(
             type="button"
             onClick={toggleExpand}
             className={cn(
-              'mt-2 flex items-center gap-1 text-xs text-foreground/35 transition-colors',
-              'hover:text-foreground/55'
+              'mt-2 flex items-center gap-1 text-xs text-foreground/56 transition-colors',
+              'hover:text-foreground/72'
             )}
           >
             {isExpanded ? (
@@ -778,7 +778,7 @@ export function MessageLoading({ className, startedAt, ...props }: MessageLoadin
         label="正在思考..."
         size="sm"
         showElapsed={startedAt || true}
-        className="text-muted-foreground/60"
+        className="text-muted-foreground/85"
       />
     </div>
   )

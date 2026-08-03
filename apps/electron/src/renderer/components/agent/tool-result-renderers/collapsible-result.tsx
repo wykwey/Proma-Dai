@@ -50,7 +50,7 @@ export function CollapsibleResult({
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="mt-2 flex items-center gap-1 text-[11px] text-foreground/35 transition-colors hover:text-foreground/55"
+          className="mt-2 flex items-center gap-1 text-[11px] text-foreground/56 transition-colors hover:text-foreground/72"
         >
           {expanded ? (
             <>

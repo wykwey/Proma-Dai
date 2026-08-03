@@ -188,7 +188,7 @@ function AutomationPromptEmptyGuide(): React.ReactElement {
         </div>
         <div className="h-px bg-border/50" />
         <div>
-          <div className="text-[13px] font-medium text-foreground/85">手动编写时，只写任务本身</div>
+          <div className="text-[13px] font-medium text-foreground/92">手动编写时，只写任务本身</div>
           <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
             例：检查 Proma 仓库新增 issue，主动回复问答类问题，不清楚的部分整理到项目级 Context 的 .context/issue-faq.md 文档；真正的 Bug 或请求罗列后发给我，不要记录任何重复的信息。
           </div>
@@ -222,13 +222,13 @@ function SaveStatusBadge({
   } else if (status === 'saved') {
     icon = <Check className="size-3 text-emerald-500" />
     text = '已保存 · 刚刚'
-    tone = 'text-foreground/70'
+    tone = 'text-foreground/84'
   } else if (status === 'error') {
     icon = <AlertTriangle className="size-3" />
     text = '保存失败'
     tone = 'text-red-500'
   } else {
-    icon = <Check className="size-3 text-muted-foreground/50" />
+    icon = <Check className="size-3 text-muted-foreground/78" />
     text = '已保存'
   }
 
@@ -779,11 +779,11 @@ export function AutomationFormView({ standalone = false }: { standalone?: boolea
             <div className="rounded-lg bg-foreground/[0.03] p-3 flex flex-col gap-1.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">上次运行</span>
-                <span className="text-foreground/80 tabular-nums">{formatTime(live?.lastRunAt)}</span>
+                <span className="text-foreground/90 tabular-nums">{formatTime(live?.lastRunAt)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">下次运行</span>
-                <span className="text-foreground/80 tabular-nums">
+                <span className="text-foreground/90 tabular-nums">
                   {live?.completedAt
                     ? '已完成'
                     : live?.active
@@ -795,7 +795,7 @@ export function AutomationFormView({ standalone = false }: { standalone?: boolea
               {(live?.scheduleType === 'once' || live?.maxRuns !== undefined || (live?.runCount ?? 0) > 0) && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">已执行</span>
-                  <span className="text-foreground/80 tabular-nums">
+                  <span className="text-foreground/90 tabular-nums">
                     {live?.runCount ?? 0}
                     {live?.scheduleType === 'once'
                       ? ' / 1 次'
@@ -1101,11 +1101,11 @@ export function AutomationFormView({ standalone = false }: { standalone?: boolea
                             onClick={() => { void handleOpenRunSession(run) }}
                             disabled={!hasSessionId}
                             title={hasSessionId ? undefined : '这条记录没有可打开的会话'}
-                            className="flex items-center gap-2 px-1.5 py-1 -mx-1.5 rounded-md text-[11px] text-foreground/60 text-left transition-colors enabled:hover:bg-foreground/[0.04] enabled:hover:text-foreground/80 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex items-center gap-2 px-1.5 py-1 -mx-1.5 rounded-md text-[11px] text-foreground/76 text-left transition-colors enabled:hover:bg-foreground/[0.04] enabled:hover:text-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <span className="tabular-nums">{formatTime(run.runAt)}</span>
-                            <span className="shrink-0 text-foreground/45">{formatRunStatus(run.status)}</span>
-                            <span className="text-foreground/35 truncate">
+                            <span className="shrink-0 text-foreground/64">{formatRunStatus(run.status)}</span>
+                            <span className="text-foreground/56 truncate">
                               {run.status === 'success' && run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : ''}
                               {run.status === 'error' ? (run.error ?? '失败') : ''}
                               {run.status === 'skipped' ? (run.skipReason ?? '跳过') : ''}

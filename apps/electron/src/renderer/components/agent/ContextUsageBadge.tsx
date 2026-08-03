@@ -84,7 +84,7 @@ function UsageRing({ ratio, isWarning }: UsageRingProps): React.ReactElement {
       viewBox="0 0 20 20"
       className={cn(
         'shrink-0 transition-colors',
-        isWarning ? 'text-amber-500 dark:text-amber-400' : 'text-foreground/70',
+        isWarning ? 'text-amber-500 dark:text-amber-400' : 'text-foreground/84',
       )}
       aria-hidden="true"
     >
@@ -123,8 +123,8 @@ interface DetailRowProps {
 function DetailRow({ label, value, emphasized }: DetailRowProps): React.ReactElement {
   return (
     <div className="flex items-center justify-between gap-4 text-xs">
-      <span className="text-foreground/70">{label}</span>
-      <span className={cn('tabular-nums', emphasized ? 'font-medium text-foreground' : 'text-foreground/90')}>
+      <span className="text-foreground/84">{label}</span>
+      <span className={cn('tabular-nums', emphasized ? 'font-medium text-foreground' : 'text-foreground/93')}>
         {value}
       </span>
     </div>
@@ -299,7 +299,7 @@ export function ContextUsageBadge({
           size="icon"
           className={cn(
             inputToolbarButtonClass,
-            isWarning ? 'text-amber-600 dark:text-amber-400' : 'text-foreground/60 hover:text-foreground',
+            isWarning ? 'text-amber-600 dark:text-amber-400' : 'text-foreground/76 hover:text-foreground',
           )}
           onMouseEnter={() => {
             cancelClose()
@@ -354,7 +354,7 @@ export function ContextUsageBadge({
           {shouldShowPlanQuota ? (
             <>
               <div className="h-px bg-border my-0.5" />
-              <div className="text-[11px] font-medium text-foreground/70">
+              <div className="text-[11px] font-medium text-foreground/84">
                 订阅额度{quota?.planName ? ` · ${quota.planName}` : ''}
               </div>
               {quota?.supported && quota.windows.length > 0 ? (
@@ -364,7 +364,7 @@ export function ContextUsageBadge({
                   ))}
                 </div>
               ) : (
-                <div className="text-[11px] text-foreground/50">
+                <div className="text-[11px] text-foreground/70">
                   {quota?.message ?? '订阅额度查询失败'}
                 </div>
               )}

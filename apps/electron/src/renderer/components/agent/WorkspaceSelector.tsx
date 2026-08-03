@@ -274,18 +274,18 @@ export function WorkspaceSelector(): React.ReactElement {
       <div className="rounded-lg border border-border/60 overflow-hidden">
         {/* 头部 */}
         <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-border/40">
-          <span className="text-[11px] font-medium text-foreground/50 uppercase tracking-wide">项目</span>
+          <span className="text-[11px] font-medium text-foreground/70 uppercase tracking-wide">项目</span>
           <div className="flex items-center gap-0.5">
             <button
               onClick={() => void createProjectFromFolder()}
-              className="p-1 rounded hover:bg-foreground/[0.06] text-foreground/35 hover:text-foreground/60 transition-colors titlebar-no-drag"
+              className="p-1 rounded hover:bg-foreground/[0.06] text-foreground/56 hover:text-foreground/76 transition-colors titlebar-no-drag"
               title="从本地文件夹创建项目"
             >
               <FolderInput size={13} />
             </button>
             <button
               onClick={handleStartCreate}
-              className="p-1 rounded hover:bg-foreground/[0.06] text-foreground/35 hover:text-foreground/60 transition-colors titlebar-no-drag"
+              className="p-1 rounded hover:bg-foreground/[0.06] text-foreground/56 hover:text-foreground/76 transition-colors titlebar-no-drag"
               title="新建空白项目"
             >
               <Plus size={13} />
@@ -318,14 +318,14 @@ export function WorkspaceSelector(): React.ReactElement {
                   'group w-full flex items-center gap-1 px-1 py-[5px] rounded-md text-[13px] transition-colors duration-100 cursor-pointer titlebar-no-drag',
                   ws.id === currentWorkspaceId
                     ? 'workspace-item-selected bg-foreground/[0.08] text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]'
-                    : 'text-foreground/70 hover:bg-foreground/[0.04]',
+                    : 'text-foreground/84 hover:bg-foreground/[0.04]',
                   dragId === ws.id && 'opacity-40',
                 )}
               >
               {/* 拖拽手柄 */}
-              <GripVertical size={12} className="flex-shrink-0 text-foreground/20 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing" />
+              <GripVertical size={12} className="flex-shrink-0 text-foreground/38 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing" />
 
-              <FolderOpen size={13} className="flex-shrink-0 text-foreground/40" />
+              <FolderOpen size={13} className="flex-shrink-0 text-foreground/60" />
 
               {editingId === ws.id ? (
                 <input
@@ -349,7 +349,7 @@ export function WorkspaceSelector(): React.ReactElement {
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                     <button
                       onClick={(e) => handleStartRename(e, ws)}
-                      className="p-0.5 rounded hover:bg-foreground/[0.08] text-foreground/30 hover:text-foreground/60 transition-colors"
+                      className="p-0.5 rounded hover:bg-foreground/[0.08] text-foreground/52 hover:text-foreground/76 transition-colors"
                       title="重命名"
                     >
                       <Pencil size={12} />
@@ -357,7 +357,7 @@ export function WorkspaceSelector(): React.ReactElement {
                     {canDelete(ws) && (
                       <button
                         onClick={(e) => handleStartDelete(e, ws.id)}
-                        className="p-0.5 rounded hover:bg-destructive/10 text-foreground/30 hover:text-destructive transition-colors"
+                        className="p-0.5 rounded hover:bg-destructive/10 text-foreground/52 hover:text-destructive transition-colors"
                         title="删除"
                       >
                         <Trash2 size={12} />
@@ -378,7 +378,7 @@ export function WorkspaceSelector(): React.ReactElement {
           {/* 新建项目输入框 */}
           {creating && (
             <div className="flex items-center gap-2 px-2 py-[5px]">
-              <FolderOpen size={13} className="flex-shrink-0 text-foreground/40" />
+              <FolderOpen size={13} className="flex-shrink-0 text-foreground/60" />
               <input
                 ref={createInputRef}
                 value={newName}

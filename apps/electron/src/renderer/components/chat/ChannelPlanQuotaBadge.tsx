@@ -69,8 +69,8 @@ export function ChannelPlanQuotaBadge({ channel }: { channel: Channel }): React.
       className={cn(
         'ml-auto shrink-0 rounded border px-1.5 py-0.5 text-[10px] leading-none',
         isUsable
-          ? 'border-foreground/10 bg-background/70 text-foreground/70'
-          : 'border-transparent bg-transparent text-muted-foreground/50',
+          ? 'border-foreground/10 bg-background/70 text-foreground/84'
+          : 'border-transparent bg-transparent text-muted-foreground/78',
       )}
     >
       {summary}

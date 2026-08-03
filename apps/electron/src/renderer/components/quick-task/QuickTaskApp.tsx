@@ -326,14 +326,14 @@ export function QuickTaskApp(): React.ReactElement {
 
             {/* 模型信息 */}
             {modelInfo && (
-              <span className="text-[11px] text-muted-foreground/70 truncate max-w-[280px]">
+              <span className="text-[11px] text-muted-foreground/90 truncate max-w-[280px]">
                 {modelInfo.channelName} / {modelInfo.modelId}
               </span>
             )}
           </div>
 
           {/* 快捷键提示 */}
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground/40">
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground/68">
             <span>⌘1 Chat</span>
             <span>⌘2 Agent</span>
             <span>Esc 关闭</span>
@@ -349,7 +349,7 @@ export function QuickTaskApp(): React.ReactElement {
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             placeholder={mode === 'agent' ? '向 Proma 描述你的任务，Enter 发送...' : '向 Proma 发送消息，Enter 发送...'}
-            className="w-full resize-none bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50 leading-relaxed"
+            className="w-full resize-none bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/78 leading-relaxed"
             style={{ minHeight: '60px', maxHeight: '160px' }}
             disabled={isSubmitting}
             rows={3}
@@ -395,7 +395,7 @@ export function QuickTaskApp(): React.ReactElement {
             />
 
             {/* 拖拽/粘贴提示 */}
-            <span className="text-[10px] text-muted-foreground/30 ml-1">
+            <span className="text-[10px] text-muted-foreground/56 ml-1">
               支持粘贴或拖拽文件
             </span>
           </div>
@@ -463,7 +463,7 @@ function AttachmentChip({ filename, mediaType, previewUrl, onRemove }: Attachmen
       <button
         type="button"
         onClick={onRemove}
-        className="ml-0.5 size-3.5 rounded-full flex items-center justify-center text-muted-foreground/50 hover:text-foreground hover:bg-muted opacity-0 group-hover/chip:opacity-100 transition-all"
+        className="ml-0.5 size-3.5 rounded-full flex items-center justify-center text-muted-foreground/78 hover:text-foreground hover:bg-muted opacity-0 group-hover/chip:opacity-100 transition-all"
       >
         <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
           <path d="M18 6 6 18" />

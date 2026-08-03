@@ -32,8 +32,8 @@ export function PreviewOpenButton({ filePath, className }: PreviewOpenButtonProp
       role="button"
       tabIndex={0}
       className={cn(
-        'inline-flex shrink-0 items-center px-1.5 py-px rounded text-[11px] text-muted-foreground/60',
-        'hover:text-foreground/70 hover:bg-muted/50',
+        'inline-flex shrink-0 items-center px-1.5 py-px rounded text-[11px] text-muted-foreground/85',
+        'hover:text-foreground/84 hover:bg-muted/50',
         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
         'transition-colors duration-150 cursor-pointer',
         className,

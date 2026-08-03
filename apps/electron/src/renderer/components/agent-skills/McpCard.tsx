@@ -126,7 +126,7 @@ export function McpCard({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onRequestDelete() }}
-                className="ml-auto rounded p-1 text-muted-foreground/50 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                className="ml-auto rounded p-1 text-muted-foreground/78 opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
               >
                 <Trash2 size={14} />
               </button>

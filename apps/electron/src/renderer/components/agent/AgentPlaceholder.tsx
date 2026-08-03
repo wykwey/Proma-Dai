@@ -11,7 +11,7 @@ export function AgentPlaceholder(): React.ReactElement {
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
       <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-        <Bot size={32} className="text-muted-foreground/60" />
+        <Bot size={32} className="text-muted-foreground/85" />
       </div>
       <div className="text-center space-y-2">
         <h2 className="text-lg font-medium text-foreground">Agent 模式</h2>

@@ -237,20 +237,20 @@ export const DiffChangesList = React.memo(function DiffChangesList({
             <input
               type="text"
               aria-label="搜索改动文件"
-              className="flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/40"
+              className="flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/68"
               placeholder="搜索改动文件..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
               <>
-                <span className="text-[10px] text-muted-foreground/50 flex-shrink-0 tabular-nums">
+                <span className="text-[10px] text-muted-foreground/78 flex-shrink-0 tabular-nums">
                   {matchedFilesCount + filteredUntrackedFiles.length}
                 </span>
                 <button
                   type="button"
                   aria-label="清除搜索"
-                  className="flex-shrink-0 p-0.5 rounded-sm hover:bg-foreground/[0.08] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  className="flex-shrink-0 p-0.5 rounded-sm hover:bg-foreground/[0.08] text-muted-foreground/78 hover:text-muted-foreground transition-colors"
                   onClick={() => setSearchQuery('')}
                 >
                   <X className="size-3" />
@@ -286,7 +286,7 @@ export const DiffChangesList = React.memo(function DiffChangesList({
                 <button
                   type="button"
                   onClick={() => toggleDir(group.gitRoot)}
-                  className="flex items-center gap-1 w-full px-2 py-2 text-[13px] font-medium text-foreground/60 hover:bg-foreground/[0.04] transition-colors"
+                  className="flex items-center gap-1 w-full px-2 py-2 text-[13px] font-medium text-foreground/76 hover:bg-foreground/[0.04] transition-colors"
                 >
                   <ChevronRight
                     className={cn('size-3 transition-transform', !isCollapsed && 'rotate-90')}
@@ -302,9 +302,9 @@ export const DiffChangesList = React.memo(function DiffChangesList({
                     )
                   })}
                   <span className="ml-auto shrink-0 flex items-center gap-1.5">
-                    <span className="text-foreground/30">{group.files.length} changed files</span>
-                    {group.totalAdditions > 0 && <span className="text-foreground/30">+{group.totalAdditions}</span>}
-                    {group.totalDeletions > 0 && <span className="text-foreground/30">-{group.totalDeletions}</span>}
+                    <span className="text-foreground/52">{group.files.length} changed files</span>
+                    {group.totalAdditions > 0 && <span className="text-foreground/52">+{group.totalAdditions}</span>}
+                    {group.totalDeletions > 0 && <span className="text-foreground/52">-{group.totalDeletions}</span>}
                   </span>
                 </button>
 
@@ -391,11 +391,11 @@ function FileRow({
             <span className="shrink-0">
               {fileName}
               {file.status === 'deleted' && (
-                <span className="ml-1 text-foreground/30 text-[12px]">(已删除)</span>
+                <span className="ml-1 text-foreground/52 text-[12px]">(已删除)</span>
               )}
             </span>
             {dir && (
-              <span className="text-[11px] text-foreground/30 truncate">{dir}</span>
+              <span className="text-[11px] text-foreground/52 truncate">{dir}</span>
             )}
           </span>
         </TooltipTrigger>
@@ -417,7 +417,7 @@ function FileRow({
         <Tooltip>
           <TooltipTrigger asChild>
             <span
-              className="p-0.5 rounded hover:bg-foreground/[0.08] text-foreground/40 hover:text-foreground/70 cursor-pointer"
+              className="p-0.5 rounded hover:bg-foreground/[0.08] text-foreground/60 hover:text-foreground/84 cursor-pointer"
               onClick={onRevert}
             >
               <Undo2 className="size-4" />
@@ -457,7 +457,7 @@ function UntrackedFileRow({
           <span className="ml-1.5 truncate flex items-baseline gap-1.5 min-w-0">
             <span className="shrink-0">{fileName}</span>
             {dir && (
-              <span className="text-[11px] text-foreground/30 truncate">{dir}</span>
+              <span className="text-[11px] text-foreground/52 truncate">{dir}</span>
             )}
           </span>
         </TooltipTrigger>

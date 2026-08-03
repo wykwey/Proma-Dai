@@ -137,8 +137,8 @@ export function TaskListResultRenderer({ result, isError }: TaskListResultRender
     <section className="rounded-md border border-border/40 bg-muted/20 overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border/30 px-3 py-2">
         <ListTodo className="size-3.5 text-muted-foreground" />
-        <span className="text-[12px] font-medium text-foreground/75">任务状态</span>
-        <span className="text-[11px] tabular-nums text-muted-foreground/60">
+        <span className="text-[12px] font-medium text-foreground/88">任务状态</span>
+        <span className="text-[11px] tabular-nums text-muted-foreground/85">
           {completedCount}/{tasks.length}
         </span>
       </div>
@@ -163,8 +163,8 @@ export function TaskListResultRenderer({ result, isError }: TaskListResultRender
               <span className={cn(
                 'truncate text-[13px]',
                 task.status === 'completed'
-                  ? 'text-muted-foreground/65 line-through'
-                  : 'text-foreground/85',
+                  ? 'text-muted-foreground/86 line-through'
+                  : 'text-foreground/92',
               )}>
                 {task.subject}
               </span>

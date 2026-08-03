@@ -76,7 +76,7 @@ export function WebSearchResultRenderer({ result, isError }: WebSearchResultRend
       <CollapsibleResult
         content={result}
         renderContent={(text) => (
-          <pre className="rounded-md p-3 text-[12px] font-mono text-foreground/60 bg-muted/30 whitespace-pre-wrap break-all overflow-x-auto">
+          <pre className="rounded-md p-3 text-[12px] font-mono text-foreground/76 bg-muted/30 whitespace-pre-wrap break-all overflow-x-auto">
             {text}
           </pre>
         )}
@@ -86,14 +86,14 @@ export function WebSearchResultRenderer({ result, isError }: WebSearchResultRend
 
   return (
     <div className="space-y-2">
-      <div className="text-[11px] text-muted-foreground/60">
+      <div className="text-[11px] text-muted-foreground/85">
         {searchResults.length} 条结果
       </div>
       {searchResults.map((item, i) => (
         <div key={i} className="rounded-md bg-muted/20 p-2.5 space-y-1">
           <div className="flex items-center gap-1.5">
-            <Globe className="size-3 shrink-0 text-muted-foreground/50" />
-            <span className="text-[12px] font-medium text-foreground/80 truncate">
+            <Globe className="size-3 shrink-0 text-muted-foreground/78" />
+            <span className="text-[12px] font-medium text-foreground/90 truncate">
               {item.title}
             </span>
           </div>
@@ -103,7 +103,7 @@ export function WebSearchResultRenderer({ result, isError }: WebSearchResultRend
             </div>
           )}
           {item.snippet && (
-            <div className="text-[11px] text-muted-foreground/70 leading-relaxed line-clamp-2">
+            <div className="text-[11px] text-muted-foreground/90 leading-relaxed line-clamp-2">
               {item.snippet}
             </div>
           )}

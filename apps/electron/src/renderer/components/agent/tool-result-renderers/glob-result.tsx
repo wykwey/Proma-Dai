@@ -26,12 +26,12 @@ export function GlobResultRenderer({ result, isError }: GlobResultRendererProps)
     const visibleFiles = text.split('\n').filter(Boolean)
     return (
       <div className="space-y-1">
-        <div className="text-[11px] text-muted-foreground/60">
+        <div className="text-[11px] text-muted-foreground/85">
           {files.length} 个文件
         </div>
         <div className="rounded-md bg-muted/20 p-2 space-y-0.5">
           {visibleFiles.map((file, i) => (
-            <div key={i} className="flex items-center gap-1.5 text-[12px] font-mono text-foreground/70 py-0.5">
+            <div key={i} className="flex items-center gap-1.5 text-[12px] font-mono text-foreground/84 py-0.5">
               <FileTypeIcon name={file.split('/').pop() || file} isDirectory={false} size={12} />
               <span className="truncate">{file}</span>
             </div>

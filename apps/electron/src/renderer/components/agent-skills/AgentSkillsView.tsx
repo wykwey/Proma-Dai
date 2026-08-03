@@ -187,10 +187,10 @@ export function AgentSkillsView(): React.ReactElement {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
         <div className="flex size-16 items-center justify-center rounded-2xl bg-foreground/[0.04]">
-          <Blocks className="size-8 text-foreground/30" />
+          <Blocks className="size-8 text-foreground/52" />
         </div>
-        <div className="text-[15px] font-medium text-foreground/80">未选择项目</div>
-        <div className="max-w-sm text-[13px] text-foreground/50">
+        <div className="text-[15px] font-medium text-foreground/90">未选择项目</div>
+        <div className="max-w-sm text-[13px] text-foreground/70">
           请先在 Agent 模式下选择或创建一个项目，再来管理它的 Skills 与 MCP。
         </div>
       </div>
@@ -205,7 +205,7 @@ export function AgentSkillsView(): React.ReactElement {
           pt-14 让按钮整体位于全局 drag 层（0–50px, z-50）下方，避免被吃掉点击。 */}
       <div className="titlebar-no-drag mx-auto flex w-full max-w-6xl shrink-0 items-center justify-between px-8 pt-14 pb-4">
         <div className="flex items-center gap-2.5">
-          <Blocks className="size-6 text-foreground/70" />
+          <Blocks className="size-6 text-foreground/84" />
           <h1 className="text-2xl font-semibold text-foreground">Agent 技能</h1>
         </div>
 
@@ -213,15 +213,15 @@ export function AgentSkillsView(): React.ReactElement {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="titlebar-no-drag flex items-center gap-2 rounded-lg border border-border/60 bg-content-area px-3 py-1.5 text-[13px] font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.04]"
+              className="titlebar-no-drag flex items-center gap-2 rounded-lg border border-border/60 bg-content-area px-3 py-1.5 text-[13px] font-medium text-foreground/90 transition-colors hover:bg-foreground/[0.04]"
             >
-              <FolderOpen size={14} className="text-foreground/45" />
+              <FolderOpen size={14} className="text-foreground/64" />
               <span className="max-w-[180px] truncate">{data.workspaceName}</span>
               <LocalProjectBadge
                 projectRootPath={currentWorkspace?.projectRootPath}
                 projectRootStatus={currentWorkspace?.projectRootStatus}
               />
-              <ChevronDown size={14} className="text-foreground/45" />
+              <ChevronDown size={14} className="text-foreground/64" />
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" className="max-h-[320px] w-56 overflow-y-auto scrollbar-thin p-1">
@@ -240,7 +240,7 @@ export function AgentSkillsView(): React.ReactElement {
                   'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors',
                   w.id === currentWorkspaceId
                     ? 'bg-accent text-accent-foreground'
-                    : 'text-foreground/80 hover:bg-accent/50',
+                    : 'text-foreground/90 hover:bg-accent/50',
                 )}
               >
                 <span className="min-w-0 flex-1 truncate">{w.name}</span>
@@ -288,12 +288,12 @@ export function AgentSkillsView(): React.ReactElement {
 
         {/* 搜索框 */}
         <div className="flex h-8 flex-1 items-center gap-2 rounded-lg border border-border/60 bg-content-area px-3 transition-colors focus-within:border-primary/40">
-          <Search size={14} className="shrink-0 text-foreground/40" />
+          <Search size={14} className="shrink-0 text-foreground/60" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={tab === 'skills' ? '搜索 Skills...' : tab === 'mcp' ? '搜索 MCP 服务器...' : '搜索记忆文件...'}
-            className="w-full bg-transparent text-[13px] text-foreground placeholder:text-foreground/35 focus:outline-none"
+            className="w-full bg-transparent text-[13px] text-foreground placeholder:text-foreground/56 focus:outline-none"
           />
         </div>
 
@@ -304,7 +304,7 @@ export function AgentSkillsView(): React.ReactElement {
               <button
                 type="button"
                 disabled
-                className="flex h-8 cursor-not-allowed items-center gap-1.5 rounded-lg border border-dashed border-border/60 px-3 text-[13px] font-medium text-foreground/35"
+                className="flex h-8 cursor-not-allowed items-center gap-1.5 rounded-lg border border-dashed border-border/60 px-3 text-[13px] font-medium text-foreground/56"
               >
                 <Store size={14} />
                 <span>社区市场</span>
@@ -323,7 +323,7 @@ export function AgentSkillsView(): React.ReactElement {
                   type="button"
                   onClick={() => void handleClassifySkills()}
                   disabled={classifyingSkills || data.skills.length === 0}
-                  className="flex h-8 items-center gap-1.5 rounded-lg border border-border/60 bg-content-area px-3 text-[13px] font-medium text-foreground/80 shadow-sm transition-colors hover:bg-foreground/[0.04] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-8 items-center gap-1.5 rounded-lg border border-border/60 bg-content-area px-3 text-[13px] font-medium text-foreground/90 shadow-sm transition-colors hover:bg-foreground/[0.04] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {classifyingSkills ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                   <span>AI 分类</span>
@@ -334,7 +334,7 @@ export function AgentSkillsView(): React.ReactElement {
             <button
               type="button"
               onClick={() => setShowImport(true)}
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-border/60 bg-content-area px-3 text-[13px] font-medium text-foreground/80 shadow-sm transition-colors hover:bg-foreground/[0.04]"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-border/60 bg-content-area px-3 text-[13px] font-medium text-foreground/90 shadow-sm transition-colors hover:bg-foreground/[0.04]"
             >
               <Plus size={14} />
               <span>导入</span>
@@ -493,10 +493,10 @@ function SkillsTab({
   onUpdate,
 }: SkillsTabProps): React.ReactElement {
   if (total === 0) {
-    return <EmptyState icon={<Blocks className="size-8 text-foreground/30" />} title="暂无 Skill" hint="可以在 Agent 模式下让 Proma 帮你联网查找并安装 Skill，或从其他项目导入。" />
+    return <EmptyState icon={<Blocks className="size-8 text-foreground/52" />} title="暂无 Skill" hint="可以在 Agent 模式下让 Proma 帮你联网查找并安装 Skill，或从其他项目导入。" />
   }
   if (customSkills.length === 0 && builtinSkills.length === 0) {
-    return <EmptyState icon={<Search className="size-8 text-foreground/30" />} title="没有匹配的 Skill" hint="试试更换搜索关键词。" />
+    return <EmptyState icon={<Search className="size-8 text-foreground/52" />} title="没有匹配的 Skill" hint="试试更换搜索关键词。" />
   }
 
   return (
@@ -542,8 +542,8 @@ function SkillSection({ title, skills, isBuiltin, updatingSkill, onOpen, onToggl
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2 px-1">
-        <span className="text-[13px] font-medium text-foreground/55">{title}</span>
-        <span className="text-[12px] tabular-nums text-foreground/35">{skills.length}</span>
+        <span className="text-[13px] font-medium text-foreground/72">{title}</span>
+        <span className="text-[12px] tabular-nums text-foreground/56">{skills.length}</span>
       </div>
       <div className="flex flex-col gap-4">
         {groups.map((group) => {
@@ -553,11 +553,11 @@ function SkillSection({ title, skills, isBuiltin, updatingSkill, onOpen, onToggl
               <button
                 type="button"
                 onClick={() => toggleGroup(group.id)}
-                className="flex h-8 items-center gap-2 rounded-lg px-1 text-left text-[13px] font-medium text-foreground/65 transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+                className="flex h-8 items-center gap-2 rounded-lg px-1 text-left text-[13px] font-medium text-foreground/80 transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
               >
-                <ChevronRight size={14} className={cn('text-foreground/35 transition-transform', !collapsed && 'rotate-90')} />
+                <ChevronRight size={14} className={cn('text-foreground/56 transition-transform', !collapsed && 'rotate-90')} />
                 <span>{group.title}</span>
-                <span className="text-[12px] tabular-nums text-foreground/35">{group.skills.length}</span>
+                <span className="text-[12px] tabular-nums text-foreground/56">{group.skills.length}</span>
               </button>
               {!collapsed && (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -600,7 +600,7 @@ function McpTab({ userEntries, builtinServers, total, onOpen, onOpenBuiltin, onT
   if (total === 0) {
     return (
       <EmptyState
-        icon={<Plus className="size-8 text-foreground/30" />}
+        icon={<Plus className="size-8 text-foreground/52" />}
         title="还没有 MCP 服务器"
         hint="点击右上角「添加服务器」开始，或在 Agent 模式下让 Proma 帮你查找并配置。"
         action={
@@ -617,7 +617,7 @@ function McpTab({ userEntries, builtinServers, total, onOpen, onOpenBuiltin, onT
     )
   }
   if (userEntries.length === 0 && builtinServers.length === 0) {
-    return <EmptyState icon={<Search className="size-8 text-foreground/30" />} title="没有匹配的 MCP 服务器" hint="试试更换搜索关键词。" />
+    return <EmptyState icon={<Search className="size-8 text-foreground/52" />} title="没有匹配的 MCP 服务器" hint="试试更换搜索关键词。" />
   }
 
   return (
@@ -674,8 +674,8 @@ function McpSection({ title, count, children }: { title: string; count: number; 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2 px-1">
-        <span className="text-[13px] font-medium text-foreground/55">{title}</span>
-        <span className="text-[12px] tabular-nums text-foreground/35">{count}</span>
+        <span className="text-[13px] font-medium text-foreground/72">{title}</span>
+        <span className="text-[12px] tabular-nums text-foreground/56">{count}</span>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {children}
@@ -691,8 +691,8 @@ function EmptyState({ icon, title, hint, action }: { icon: React.ReactNode; titl
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 pt-24 text-center">
       <div className="flex size-16 items-center justify-center rounded-2xl bg-foreground/[0.04]">{icon}</div>
       <div className="flex flex-col gap-1.5">
-        <div className="text-[15px] font-medium text-foreground/85">{title}</div>
-        <div className="text-[13px] leading-relaxed text-foreground/50">{hint}</div>
+        <div className="text-[15px] font-medium text-foreground/92">{title}</div>
+        <div className="text-[13px] leading-relaxed text-foreground/70">{hint}</div>
       </div>
       {action}
     </div>

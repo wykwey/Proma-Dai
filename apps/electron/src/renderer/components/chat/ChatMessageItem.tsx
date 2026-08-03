@@ -183,8 +183,8 @@ export const ChatMessageItem = React.memo(function ChatMessageItem({
           <div className="flex items-start gap-2.5 mb-2.5">
             <UserAvatar avatar={userProfile.avatar} size={35} />
             <div className="flex flex-col justify-between h-[35px]">
-              <span className="text-sm font-semibold text-foreground/60 leading-none">{userProfile.userName}</span>
-              <span className="message-time text-[10px] text-foreground/[0.38] leading-none">{formatMessageTime(message.createdAt)}</span>
+              <span className="text-sm font-semibold text-foreground/76 leading-none">{userProfile.userName}</span>
+              <span className="message-time text-[10px] text-foreground/[0.56] leading-none">{formatMessageTime(message.createdAt)}</span>
             </div>
           </div>
         )}
@@ -298,7 +298,7 @@ export const ChatMessageItem = React.memo(function ChatMessageItem({
               </span>
             )}
             {message.role === 'assistant' && message.stopped && !message.error && (
-              <span className="text-[11px] text-foreground/40 ml-1">（已中止）</span>
+              <span className="text-[11px] text-foreground/60 ml-1">（已中止）</span>
             )}
           </MessageActions>
         )}

@@ -45,7 +45,7 @@ function TaskRow({ item }: TaskRowProps): React.ReactElement {
       {/* 状态图标 */}
       <span className="flex items-center justify-center size-2.5 shrink-0">
         {item.status === 'pending' && (
-          <Circle className="size-2.5 text-muted-foreground/40" />
+          <Circle className="size-2.5 text-muted-foreground/68" />
         )}
         {isInProgress && (
           <Loader2 className="size-2 animate-spin text-blue-500" />
@@ -57,7 +57,7 @@ function TaskRow({ item }: TaskRowProps): React.ReactElement {
           <CircleAlert className="size-2.5 text-amber-500" />
         )}
         {isCancelled && (
-          <CircleX className="size-2.5 text-muted-foreground/50" />
+          <CircleX className="size-2.5 text-muted-foreground/78" />
         )}
         {isError && (
           <CircleAlert className="size-2.5 text-destructive" />
@@ -70,7 +70,7 @@ function TaskRow({ item }: TaskRowProps): React.ReactElement {
           'truncate flex-1',
           (isCompleted || isCancelled) && 'text-muted-foreground line-through',
           isError && 'text-destructive',
-          isInProgress && 'text-foreground/90',
+          isInProgress && 'text-foreground/93',
           !isCompleted && !isInProgress && !isCancelled && !isError && 'text-muted-foreground',
         )}
       >
@@ -134,7 +134,7 @@ export function TaskProgressCard({ activities, animate = false, streamEnded = fa
           <span className="text-[13px] font-medium text-muted-foreground">
             任务进度
           </span>
-          <span className="text-[11px] text-muted-foreground/50 tabular-nums">
+          <span className="text-[11px] text-muted-foreground/78 tabular-nums">
             {completedCount}/{totalCount}
           </span>
         </div>
@@ -154,7 +154,7 @@ export function TaskProgressCard({ activities, animate = false, streamEnded = fa
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground/50 hover:text-foreground/70 transition-colors"
+            className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground/78 hover:text-foreground/84 transition-colors"
           >
             {expanded ? (
               <>

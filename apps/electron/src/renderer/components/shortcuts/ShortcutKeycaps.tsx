@@ -31,7 +31,7 @@ export function ShortcutKeycaps({
     <span className={cn('inline-flex flex-wrap items-center justify-end gap-1', className)} aria-label={getAcceleratorDisplay(activeAccelerator)}>
       {keys.map((key, index) => (
         <React.Fragment key={`${key}-${index}`}>
-          {index > 0 && <span aria-hidden="true" className={cn('text-[11px] font-medium text-muted-foreground/70', separatorClassName)}>+</span>}
+          {index > 0 && <span aria-hidden="true" className={cn('text-[11px] font-medium text-muted-foreground/90', separatorClassName)}>+</span>}
           <kbd className={cn('inline-flex h-6 min-w-6 items-center justify-center rounded-[4px] border border-border/70 bg-background px-1.5 font-[system-ui] text-[12px] font-medium leading-none text-foreground shadow-sm', keycapClassName)}>
             {getAcceleratorDisplay(key)}
           </kbd>

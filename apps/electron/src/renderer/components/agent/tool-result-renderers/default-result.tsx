@@ -48,10 +48,10 @@ export function DefaultResultRenderer({ result, isError }: DefaultResultRenderer
           <tbody>
             {keyValues.map(({ key, value }, i) => (
               <tr key={i} className="border-b border-border/20 last:border-b-0">
-                <td className="px-3 py-1.5 text-muted-foreground/60 font-mono whitespace-nowrap align-top">
+                <td className="px-3 py-1.5 text-muted-foreground/85 font-mono whitespace-nowrap align-top">
                   {key}
                 </td>
-                <td className="px-3 py-1.5 text-foreground/70 font-mono whitespace-pre-wrap break-all">
+                <td className="px-3 py-1.5 text-foreground/84 font-mono whitespace-pre-wrap break-all">
                   {value}
                 </td>
               </tr>
@@ -67,7 +67,7 @@ export function DefaultResultRenderer({ result, isError }: DefaultResultRenderer
     <CollapsibleResult
       content={result}
       renderContent={(text) => (
-        <pre className="rounded-md p-3 text-[12px] font-mono text-foreground/60 bg-muted/30 whitespace-pre-wrap break-all overflow-x-auto max-h-[400px] overflow-y-auto">
+        <pre className="rounded-md p-3 text-[12px] font-mono text-foreground/76 bg-muted/30 whitespace-pre-wrap break-all overflow-x-auto max-h-[400px] overflow-y-auto">
           {text}
         </pre>
       )}

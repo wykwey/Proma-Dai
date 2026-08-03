@@ -62,7 +62,7 @@ export function TutorialBanner(): React.ReactElement | null {
         {/* 关闭按钮 */}
         <button
           onClick={handleLater}
-          className="absolute top-3 right-3 p-1 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-foreground/5 transition-colors"
+          className="absolute top-3 right-3 p-1 rounded-lg text-muted-foreground/78 hover:text-muted-foreground hover:bg-foreground/5 transition-colors"
         >
           <X size={14} />
         </button>
@@ -98,7 +98,7 @@ export function TutorialBanner(): React.ReactElement | null {
         </div>
 
         {/* 提示文字 */}
-        <p className="text-[11px] text-muted-foreground/60 mt-3 text-center">
+        <p className="text-[11px] text-muted-foreground/85 mt-3 text-center">
           你可以随时点击顶栏「教程」标签重新打开
         </p>
       </div>

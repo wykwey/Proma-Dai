@@ -17,6 +17,16 @@
   text-rendering: optimizeLegibility;
 }
 
+/* ===== 浅色主题：输入框提示文字(placeholder)对比提升 =====
+ * 各输入框占位提示默认用浅色 muted-foreground(≈#737373)作底，浅色底上对比不足会发虚。
+ * 浅色下（默认浅色 + 各浅色特殊主题，均不带 .dark）统一改用深色 --foreground 的低透明变体，
+ * 保证提示文字清晰可读；深色主题不受影响，维持原有占位观感。
+ * 对已用 placeholder:text-foreground/56、/60 的输入框：/0.55 与其处于同一可读区间，无回退。
+ */
+:root:not(.dark) ::placeholder {
+  color: hsl(var(--foreground) / 0.55);
+}
+
 /* CRT Terminal 主题：全局等宽字体覆盖 */
 .theme-terminal-dark {
   font-family:
@@ -120,13 +130,13 @@
     --dialog: 0 0% 100%;
     --dialog-foreground: 0 0% 3.9%;
     --content-area: 0 0% 100%;            /* 主内容区域背景 */
-    --sidebar-surface: 60 14.3% 98.6%;    /* 默认浅色侧栏：RGB 252/252/251 */
-    --tabbar-surface: 60 14.3% 98.6%;     /* 默认浅色未选中 Tab 背景：RGB 252/252/251 */
+    --sidebar-surface: 240 0.4% 95.7%;  /* 默认浅色侧栏：#f3f3f5（用户指定），区别于纯白内容区 */
+    --tabbar-surface: 240 0.4% 95.7%;   /* 默认浅色未选中 Tab 背景：对齐侧栏 #f3f3f5 */
     --tab-indicator: var(--primary);       /* 顶部 Tab 选中条，默认跟随主色 */
-    --sidebar-control-surface: 60 7% 93%;
-    --sidebar-control-surface-hover: 60 7% 90%;
-    --sidebar-control-stroke: 0 0% 9% / 0.10;
-    --input-surface: 60 14.3% 98.6%;      /* 默认浅色输入框：RGB 252/252/251 */
+    --sidebar-control-surface: 0 0% 88%;
+    --sidebar-control-surface-hover: 0 0% 85%;
+    --sidebar-control-stroke: 0 0% 9% / 0.12;
+    --input-surface: 0 0% 97%;            /* 默认浅色输入框 */
     --tab-surface: 0 0% 100%;             /* 与内容区域无缝衔接 */
     /* 毛玻璃 Tooltip：深色半透明背景 + 白色文字 */
     --tooltip: 0 0% 15%;

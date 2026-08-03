@@ -142,7 +142,7 @@ export function PermissionBanner({ sessionId }: PermissionBannerProps): React.Re
           </span>
           <button
             type="button"
-            className="size-5 flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 transition-colors"
+            className="size-5 flex items-center justify-center rounded-md text-muted-foreground/78 hover:text-foreground hover:bg-muted/60 transition-colors"
             onClick={handleDismiss}
             title="关闭并终止 Agent"
           >
@@ -179,7 +179,7 @@ export function PermissionBanner({ sessionId }: PermissionBannerProps): React.Re
 
       {/* 操作按钮 */}
       <div className="flex items-center justify-end gap-1.5 px-3 pb-2.5">
-        <span className="text-[10px] text-muted-foreground/40 mr-auto">
+        <span className="text-[10px] text-muted-foreground/68 mr-auto">
           Enter 允许
         </span>
         <Button

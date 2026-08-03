@@ -157,13 +157,13 @@ export function StickyUserMessage({ userMessages }: StickyUserMessageProps): Rea
             {/* 头部：头像 + 用户名 + 提示 */}
             <div className="flex items-center gap-2 mb-1">
               <UserAvatar avatar={userProfile.avatar} size={18} />
-              <span className="text-xs font-medium text-foreground/60">{userProfile.userName}</span>
+              <span className="text-xs font-medium text-foreground/76">{userProfile.userName}</span>
               <ChevronUp className="size-3 text-muted-foreground ml-auto" />
             </div>
 
             {/* 文本内容：最多两行，支持 Markdown 渲染 */}
             {stickyMessage?.text && (
-              <div className="text-sm text-foreground/80 line-clamp-2 leading-relaxed">
+              <div className="text-sm text-foreground/90 line-clamp-2 leading-relaxed">
                 <MessageResponse
                   className="prose-p:my-0 prose-p:inline prose-headings:my-0 prose-headings:text-sm prose-pre:hidden prose-ul:my-0 prose-ol:my-0 prose-li:my-0"
                   remarkPlugins={STICKY_REMARK_PLUGINS}

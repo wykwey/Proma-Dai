@@ -191,7 +191,7 @@ function Section({ title, automations, onEdit, onRefresh, onDelete }: SectionPro
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="text-[13px] font-medium text-foreground/55 px-1">{title}</div>
+      <div className="text-[13px] font-medium text-foreground/72 px-1">{title}</div>
       <div className="overflow-hidden rounded-none border border-border/60 bg-card">
         {automations.map((a, i) => (
           // 行容器：用 div + role=button，避免与内部 button（立即运行/删除/暂停）
@@ -215,7 +215,7 @@ function Section({ title, automations, onEdit, onRefresh, onDelete }: SectionPro
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="text-[14px] font-medium text-foreground truncate">{a.name}</span>
-                <span className="text-[12px] text-foreground/45 truncate">
+                <span className="text-[12px] text-foreground/64 truncate">
                   {a.prompt.slice(0, 60)}{a.prompt.length > 60 ? '…' : ''}
                 </span>
               </div>
@@ -233,7 +233,7 @@ function Section({ title, automations, onEdit, onRefresh, onDelete }: SectionPro
                       type="button"
                       aria-label={`立即运行 ${a.name}`}
                       onClick={(e) => { void handleRunNow(e, a) }}
-                      className="p-1.5 rounded-md text-foreground/50 hover:text-foreground/85 hover:bg-foreground/[0.08] transition-colors"
+                      className="p-1.5 rounded-md text-foreground/70 hover:text-foreground/92 hover:bg-foreground/[0.08] transition-colors"
                     >
                       <Play className="size-3.5" />
                     </button>
@@ -246,7 +246,7 @@ function Section({ title, automations, onEdit, onRefresh, onDelete }: SectionPro
                       type="button"
                       aria-label={`删除 ${a.name}`}
                       onClick={(e) => handleDelete(e, a)}
-                      className="p-1.5 rounded-md text-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      className="p-1.5 rounded-md text-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <Trash2 className="size-3.5" />
                     </button>
@@ -264,8 +264,8 @@ function Section({ title, automations, onEdit, onRefresh, onDelete }: SectionPro
                   className={cn(
                     'p-1.5 -m-1.5 shrink-0 flex items-center justify-center rounded-md transition-colors',
                     a.active
-                      ? 'text-foreground/35 hover:bg-foreground/[0.06] hover:text-foreground/70 group-hover:text-foreground/55'
-                      : 'text-foreground/30 hover:bg-emerald-500/10 hover:text-emerald-500 group-hover:text-foreground/45',
+                      ? 'text-foreground/56 hover:bg-foreground/[0.06] hover:text-foreground/84 group-hover:text-foreground/72'
+                      : 'text-foreground/52 hover:bg-emerald-500/10 hover:text-emerald-500 group-hover:text-foreground/64',
                   )}
                 >
                   {a.active ? <Pause className="size-3.5" /> : <Power className="size-3.5" />}
@@ -286,11 +286,11 @@ function EmptyState({ onCreate }: { onCreate: () => void }): React.ReactElement 
   return (
     <div className="max-w-2xl mx-auto pt-24 flex flex-col items-center text-center gap-4">
       <div className="size-16 rounded-2xl bg-foreground/[0.04] flex items-center justify-center">
-        <Clock className="size-8 text-foreground/30" />
+        <Clock className="size-8 text-foreground/52" />
       </div>
       <div className="flex flex-col gap-1.5">
-        <div className="text-[16px] font-medium text-foreground/85">暂无定时任务</div>
-        <div className="text-[13px] text-foreground/50 leading-relaxed max-w-md">
+        <div className="text-[16px] font-medium text-foreground/92">暂无定时任务</div>
+        <div className="text-[13px] text-foreground/70 leading-relaxed max-w-md">
           定时任务可以让 AI 周期性地执行某项任务，如每天总结新邮件、每小时检查 GitHub 仓库等。
           也可以在对话中用「以后每隔 X 分钟…」让 Proma 自动识别并创建。
         </div>

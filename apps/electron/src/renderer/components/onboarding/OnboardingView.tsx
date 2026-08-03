@@ -126,7 +126,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
                 '开始使用'
               )}
             </Button>
-            <p className="text-xs text-muted-foreground/60">
+            <p className="text-xs text-muted-foreground/85">
               这些内容之后也能在设置中找到，不用担心错过
             </p>
           </div>

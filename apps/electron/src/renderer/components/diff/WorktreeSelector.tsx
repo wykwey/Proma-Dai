@@ -155,7 +155,7 @@ export function WorktreeSelector({
           {repoWorktrees.map((rw) => (
             <React.Fragment key={rw.repo.repoPath}>
               {hasMultipleRepos && (
-                <div className="px-3 pt-2 pb-0.5 text-[10px] font-medium text-muted-foreground/70 uppercase tracking-wider">
+                <div className="px-3 pt-2 pb-0.5 text-[10px] font-medium text-muted-foreground/90 uppercase tracking-wider">
                   {rw.repo.name}
                 </div>
               )}

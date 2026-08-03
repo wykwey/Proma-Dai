@@ -97,7 +97,7 @@ export function SkillCard({ skill, isBuiltin, updating, onOpen, onToggle, onUpda
           </Tooltip>
         )}
         {!skill.hasUpdate && skill.importSource && (
-          <ArrowDownToLine size={12} className="ml-auto text-muted-foreground/40" />
+          <ArrowDownToLine size={12} className="ml-auto text-muted-foreground/68" />
         )}
       </div>
     </div>

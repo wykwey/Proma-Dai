@@ -319,7 +319,7 @@ function getMessageBubbleClass(item: TabMinimapItem): string {
 
 function PreviewText({ text }: { text: string }): React.ReactElement {
   if (!text) {
-    return <span className="text-[11px] text-muted-foreground/60">(空消息)</span>
+    return <span className="text-[11px] text-muted-foreground/85">(空消息)</span>
   }
 
   return (
@@ -349,11 +349,11 @@ function ItemIcon({ item, type }: { item: TabMinimapItem; type: SessionMiniMapTy
     return <Bot className="size-4 shrink-0 mt-0.5 text-blue-500/70" />
   }
   if (item.role === 'status') {
-    return <AlertTriangle className="size-4 shrink-0 mt-0.5 text-muted-foreground/60" />
+    return <AlertTriangle className="size-4 shrink-0 mt-0.5 text-muted-foreground/85" />
   }
   return type === 'chat'
-    ? <MessageSquare className="size-4 shrink-0 mt-0.5 text-muted-foreground/60" />
-    : <Bot className="size-4 shrink-0 mt-0.5 text-muted-foreground/60" />
+    ? <MessageSquare className="size-4 shrink-0 mt-0.5 text-muted-foreground/85" />
+    : <Bot className="size-4 shrink-0 mt-0.5 text-muted-foreground/85" />
 }
 
 export function SessionMiniMapPopover(props: SessionMiniMapPopoverProps): React.ReactElement | null {

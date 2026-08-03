@@ -16,7 +16,7 @@ interface SpinnerProps extends React.HTMLAttributes<HTMLDivElement> {
  *
  * @example
  * ```tsx
- * <Spinner size="sm" className="text-muted-foreground/60" />
+ * <Spinner size="sm" className="text-muted-foreground/85" />
  * ```
  */
 export function Spinner({

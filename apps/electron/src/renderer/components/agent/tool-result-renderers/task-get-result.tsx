@@ -202,7 +202,7 @@ export function TaskGetResultRenderer({ result, isError }: TaskGetResultRenderer
                 #{task.id}
               </span>
             )}
-            <h4 className="truncate text-[13px] font-medium text-foreground/90">
+            <h4 className="truncate text-[13px] font-medium text-foreground/93">
               {task.subject || '任务详情'}
             </h4>
           </div>
@@ -224,7 +224,7 @@ export function TaskGetResultRenderer({ result, isError }: TaskGetResultRenderer
 
       {task.blocks.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 border-t border-border/30 px-3 py-2">
-          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/70">
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground/90">
             <Layers3 className="size-3" />
             关联块
           </span>
@@ -240,7 +240,7 @@ export function TaskGetResultRenderer({ result, isError }: TaskGetResultRenderer
       )}
 
       {!task.description && task.blocks.length === 0 && (
-        <div className="flex items-center gap-1.5 border-t border-border/30 px-3 py-2 text-[11px] text-muted-foreground/60">
+        <div className="flex items-center gap-1.5 border-t border-border/30 px-3 py-2 text-[11px] text-muted-foreground/85">
           <FileText className="size-3" />
           没有更多任务详情
         </div>

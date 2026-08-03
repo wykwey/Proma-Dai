@@ -217,7 +217,7 @@ export function createSkillMentionSuggestion(
           <Sparkles className="size-3.5 text-violet-500 flex-shrink-0" />
           <span className="truncate font-medium flex-1 min-w-0">{item.name}</span>
           {item.description && (
-            <span className="truncate text-[10px] text-muted-foreground/50 max-w-[120px]">{item.description}</span>
+            <span className="truncate text-[10px] text-muted-foreground/78 max-w-[120px]">{item.description}</span>
           )}
         </>
       ),
@@ -259,7 +259,7 @@ export function createMcpMentionSuggestion(
         <>
           <Server className="size-3.5 text-emerald-500 flex-shrink-0" />
           <span className="truncate font-medium flex-1 min-w-0">{item.name}</span>
-          <span className="truncate text-[10px] text-muted-foreground/50 max-w-[120px]">{item.type}</span>
+          <span className="truncate text-[10px] text-muted-foreground/78 max-w-[120px]">{item.type}</span>
         </>
       ),
       toCommand: (item) => ({ id: item.id, label: item.name }),
@@ -302,7 +302,7 @@ export function createSessionMentionSuggestion(
           <MessageSquareText className="size-3.5 text-sky-500 flex-shrink-0" />
           <span className="truncate font-medium flex-1 min-w-0">{item.title}</span>
           {(item.workspaceName || item.workspaceSlug || item.snippet) && (
-            <span className="truncate text-[10px] text-muted-foreground/50 max-w-[120px]">
+            <span className="truncate text-[10px] text-muted-foreground/78 max-w-[120px]">
               {formatSessionReferenceDescription(item)}
             </span>
           )}

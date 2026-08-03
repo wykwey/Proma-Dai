@@ -383,7 +383,7 @@ export function ScrollMinimap({ items }: ScrollMinimapProps): React.ReactElement
             {/* 搜索框 */}
             <div className="px-2 py-1.5 border-b shrink-0">
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/50" />
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/78" />
                 <Input
                   ref={searchInputRef}
                   placeholder="搜索消息..."

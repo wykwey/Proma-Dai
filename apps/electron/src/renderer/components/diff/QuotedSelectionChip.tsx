@@ -58,10 +58,10 @@ export function QuotedSelectionChip({
     >
       <Quote className="size-4 shrink-0 mt-0.5 text-primary/60" />
       <div className="flex flex-col min-w-0">
-        <span className="text-foreground/80 line-clamp-2 leading-snug break-words [overflow-wrap:anywhere]">
+        <span className="text-foreground/90 line-clamp-2 leading-snug break-words [overflow-wrap:anywhere]">
           {truncateText(text)}
         </span>
-        <span className="text-[11px] text-muted-foreground/60 mt-0.5 break-words [overflow-wrap:anywhere]">
+        <span className="text-[11px] text-muted-foreground/85 mt-0.5 break-words [overflow-wrap:anywhere]">
           {sourceLabel ?? truncatePath(filePath)}
         </span>
       </div>
@@ -70,7 +70,7 @@ export function QuotedSelectionChip({
         onClick={handleRemoveClick}
         className={cn(
           'absolute top-1 right-1 size-[18px] rounded-full',
-          'bg-foreground/10 text-foreground/50',
+          'bg-foreground/10 text-foreground/70',
           'flex items-center justify-center',
           'opacity-0 group-hover/chip:opacity-100 transition-opacity duration-200',
           'hover:bg-foreground/20 hover:text-foreground',

@@ -165,14 +165,14 @@ function SubAgentFooter({
     <div className="mt-2 pt-2 border-t border-border/20 space-y-1.5">
       {/* 最终输出文本（Markdown 渲染） */}
       {cleanText && (
-        <div className="text-muted-foreground/70">
+        <div className="text-muted-foreground/90">
           <MessageResponse>{cleanText}</MessageResponse>
         </div>
       )}
 
       {/* 用量统计行（最底部） */}
       {effectiveMeta && (
-        <div className="flex items-center gap-3 text-[12px] text-muted-foreground/60 tabular-nums">
+        <div className="flex items-center gap-3 text-[12px] text-muted-foreground/85 tabular-nums">
           {effectiveMeta.durationMs > 0 && (
             <span>{formatDuration(effectiveMeta.durationMs)}</span>
           )}
@@ -224,23 +224,23 @@ function PromptRow({ prompt, dimmed = false }: { prompt: string; dimmed?: boolea
         className="flex items-center gap-2 py-0.5 text-left hover:opacity-70 transition-opacity group"
         onClick={() => setExpanded(!expanded)}
       >
-        <MessageSquareText className={cn('size-3.5 shrink-0', dimmed ? 'text-muted-foreground/70' : 'text-muted-foreground')} />
+        <MessageSquareText className={cn('size-3.5 shrink-0', dimmed ? 'text-muted-foreground/90' : 'text-muted-foreground')} />
 
         <span className={cn(
           'shrink-0 text-[14px]',
-          dimmed ? 'text-muted-foreground/70' : 'text-muted-foreground',
+          dimmed ? 'text-muted-foreground/90' : 'text-muted-foreground',
         )}>提示词</span>
 
         <span className={cn(
           'truncate text-[14px]',
-          dimmed ? 'text-muted-foreground/50' : 'text-muted-foreground/60',
+          dimmed ? 'text-muted-foreground/78' : 'text-muted-foreground/85',
         )}>
           {preview}
         </span>
 
         <ChevronRight
           className={cn(
-            'shrink-0 size-3 text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-all duration-150',
+            'shrink-0 size-3 text-muted-foreground/68 opacity-0 group-hover:opacity-100 transition-all duration-150',
             expanded && 'rotate-90 opacity-100',
           )}
         />
@@ -248,7 +248,7 @@ function PromptRow({ prompt, dimmed = false }: { prompt: string; dimmed?: boolea
 
       {expanded && (
         <div className="ml-5.5 mt-1 mb-2 pl-3 border-l-2 border-border/30 animate-in fade-in slide-in-from-top-1 duration-150">
-          <p className="text-[13px] text-foreground/70 leading-relaxed whitespace-pre-wrap break-words">
+          <p className="text-[13px] text-foreground/84 leading-relaxed whitespace-pre-wrap break-words">
             {prompt}
           </p>
         </div>
@@ -268,14 +268,14 @@ function TaskGetCollapsedSummary({ task }: { task: ParsedTaskGetResult }): React
     <>
       {task.subject && (
         <>
-          <span className="shrink-0 text-muted-foreground/35">·</span>
-          <span className="min-w-0 truncate text-[14px] font-medium text-foreground/75">
+          <span className="shrink-0 text-muted-foreground/62">·</span>
+          <span className="min-w-0 truncate text-[14px] font-medium text-foreground/88">
             {task.subject}
           </span>
         </>
       )}
       {task.description && (
-        <span className="hidden min-w-0 truncate text-[13px] text-muted-foreground/60 sm:inline">
+        <span className="hidden min-w-0 truncate text-[13px] text-muted-foreground/85 sm:inline">
           {task.description}
         </span>
       )}
@@ -285,7 +285,7 @@ function TaskGetCollapsedSummary({ task }: { task: ParsedTaskGetResult }): React
         </span>
       )}
       {blockPreview && (
-        <span className="shrink-0 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[11px] text-muted-foreground/70">
+        <span className="shrink-0 rounded-sm bg-muted/50 px-1.5 py-0.5 text-[11px] text-muted-foreground/90">
           关联 {blockPreview}
         </span>
       )}
@@ -300,8 +300,8 @@ function TaskListCollapsedSummary({ tasks }: { tasks: ParsedTaskListItem[] }): R
 
   return (
     <>
-      <span className="shrink-0 text-muted-foreground/35">·</span>
-      <span className="shrink-0 rounded-full bg-muted/50 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground/75">
+      <span className="shrink-0 text-muted-foreground/62">·</span>
+      <span className="shrink-0 rounded-full bg-muted/50 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground/90">
         {completedCount}/{tasks.length} 已完成
       </span>
       {activeCount > 0 && (
@@ -310,7 +310,7 @@ function TaskListCollapsedSummary({ tasks }: { tasks: ParsedTaskListItem[] }): R
         </span>
       )}
       {pendingCount > 0 && (
-        <span className="hidden shrink-0 rounded-full bg-muted/40 px-1.5 py-0.5 text-[11px] text-muted-foreground/65 sm:inline">
+        <span className="hidden shrink-0 rounded-full bg-muted/40 px-1.5 py-0.5 text-[11px] text-muted-foreground/86 sm:inline">
           {pendingCount} 待处理
         </span>
       )}
@@ -394,7 +394,7 @@ function ToolUseBlock({ block, allMessages, animate = false, index = 0, dimmed =
         >
           <ChevronRight
             className={cn(
-              'size-3 text-muted-foreground/50 transition-transform duration-150 shrink-0',
+              'size-3 text-muted-foreground/78 transition-transform duration-150 shrink-0',
               childrenExpanded && 'rotate-90',
             )}
           />
@@ -406,16 +406,16 @@ function ToolUseBlock({ block, allMessages, animate = false, index = 0, dimmed =
             <XCircle className="size-3.5 text-destructive/70 shrink-0" />
           ) : null}
 
-          <ToolIcon className={cn('size-3.5 shrink-0', dimmed ? 'text-muted-foreground/70' : 'text-muted-foreground')} />
+          <ToolIcon className={cn('size-3.5 shrink-0', dimmed ? 'text-muted-foreground/90' : 'text-muted-foreground')} />
 
           <span className={cn(
             'truncate text-[14px]',
-            dimmed ? 'text-muted-foreground/70' : 'text-muted-foreground',
+            dimmed ? 'text-muted-foreground/90' : 'text-muted-foreground',
           )}>{displayLabel}</span>
 
           {/* 子工具计数（折叠时显示） */}
           {childToolCount > 0 && !childrenExpanded && (
-            <span className="shrink-0 text-[11px] text-muted-foreground/50 tabular-nums">
+            <span className="shrink-0 text-[11px] text-muted-foreground/78 tabular-nums">
               {childToolCount} 项工具调用
             </span>
           )}
@@ -456,7 +456,7 @@ function ToolUseBlock({ block, allMessages, animate = false, index = 0, dimmed =
             <button
               type="button"
               onClick={() => setChildrenExpanded(false)}
-              className="flex items-center gap-1 text-xs text-foreground/40 hover:text-foreground/70 transition-colors"
+              className="flex items-center gap-1 text-xs text-foreground/60 hover:text-foreground/84 transition-colors"
             >
               <ChevronUp className="size-3" />
               <span>收起</span>
@@ -489,12 +489,12 @@ function ToolUseBlock({ block, allMessages, animate = false, index = 0, dimmed =
           <XCircle className="size-3.5 text-destructive/70 shrink-0" />
         ) : null}
 
-        <ToolIcon className={cn('size-3.5 shrink-0', dimmed ? 'text-muted-foreground/70' : 'text-muted-foreground')} />
+        <ToolIcon className={cn('size-3.5 shrink-0', dimmed ? 'text-muted-foreground/90' : 'text-muted-foreground')} />
 
         <span className={cn(
           'min-w-0 truncate text-[14px]',
           taskGetSummary || taskListSummary ? 'shrink-0' : '',
-          dimmed ? 'text-muted-foreground/70' : 'text-muted-foreground',
+          dimmed ? 'text-muted-foreground/90' : 'text-muted-foreground',
         )}>{displayLabel}</span>
 
         {phrase.diffStats && (isCompleted || !isStreaming) && (
@@ -523,7 +523,7 @@ function ToolUseBlock({ block, allMessages, animate = false, index = 0, dimmed =
 
         <ChevronRight
           className={cn(
-            'shrink-0 size-3 text-muted-foreground/45 transition-transform duration-150',
+            'shrink-0 size-3 text-muted-foreground/72 transition-transform duration-150',
             expanded && 'rotate-90',
           )}
         />
@@ -582,8 +582,8 @@ function ThinkingBlock({ block, dimmed = false }: ThinkingBlockProps): React.Rea
   return (
     <div className="relative mb-3">
       <div className="flex items-center gap-1.5 mb-1.5">
-        <Brain className={cn('size-3.5', dimmed ? 'text-muted-foreground/70' : 'text-muted-foreground')} />
-        <span className={cn('text-[14px] uppercase tracking-wider', dimmed ? 'text-muted-foreground/70' : 'text-muted-foreground')}>
+        <Brain className={cn('size-3.5', dimmed ? 'text-muted-foreground/90' : 'text-muted-foreground')} />
+        <span className={cn('text-[14px] uppercase tracking-wider', dimmed ? 'text-muted-foreground/90' : 'text-muted-foreground')}>
           Thinking
         </span>
       </div>
@@ -601,7 +601,7 @@ function ThinkingBlock({ block, dimmed = false }: ThinkingBlockProps): React.Rea
           ref={contentRef}
           className={cn(
             'prose prose-sm dark:prose-invert max-w-none prose-p:my-1 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 text-[14px] leading-relaxed overflow-hidden transition-[max-height] duration-200',
-            dimmed ? 'text-muted-foreground' : 'text-foreground/90',
+            dimmed ? 'text-muted-foreground' : 'text-foreground/93',
             shouldCollapse && !isExpanded && 'max-h-[5.6em]',
           )}
         >
@@ -614,8 +614,8 @@ function ThinkingBlock({ block, dimmed = false }: ThinkingBlockProps): React.Rea
             type="button"
             onClick={toggleExpand}
             className={cn(
-              'mt-2 flex items-center gap-1 text-xs text-foreground/35 transition-colors',
-              'hover:text-foreground/55'
+              'mt-2 flex items-center gap-1 text-xs text-foreground/56 transition-colors',
+              'hover:text-foreground/72'
             )}
           >
             {isExpanded ? (

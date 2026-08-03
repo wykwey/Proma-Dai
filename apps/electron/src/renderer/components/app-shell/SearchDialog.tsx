@@ -121,7 +121,7 @@ function HighlightSnippet({ snippet, matchStart, matchLength }: {
 
 function SearchResultIcon({ result }: { result: SearchResult }): React.ReactElement {
   return result.type === 'chat' ? (
-    <MessageSquare size={14} className="flex-shrink-0 text-foreground/40" />
+    <MessageSquare size={14} className="flex-shrink-0 text-foreground/60" />
   ) : (
     <Bot size={14} className="flex-shrink-0 text-blue-500/70" />
   )
@@ -174,20 +174,20 @@ function SearchResultRow({
       >
         <div className="flex items-center gap-2.5">
           <SearchResultIcon result={result} />
-          <span className="flex-1 min-w-0 truncate text-[13px] text-foreground/80">
+          <span className="flex-1 min-w-0 truncate text-[13px] text-foreground/90">
             {isContent ? result.title : <HighlightText text={result.title} query={committedQuery} />}
           </span>
           {wsName && (
-            <span className="flex-shrink-0 px-1.5 py-0 rounded-full bg-foreground/[0.06] text-[10px] leading-4 text-foreground/40 font-medium truncate max-w-[80px]">
+            <span className="flex-shrink-0 px-1.5 py-0 rounded-full bg-foreground/[0.06] text-[10px] leading-4 text-foreground/60 font-medium truncate max-w-[80px]">
               {wsName}
             </span>
           )}
           {result.archived && (
-            <Archive size={12} className="flex-shrink-0 text-foreground/30" />
+            <Archive size={12} className="flex-shrink-0 text-foreground/52" />
           )}
         </div>
         {isContent && (
-          <div className="pl-[22px] text-[12px] text-foreground/50 truncate">
+          <div className="pl-[22px] text-[12px] text-foreground/70 truncate">
             <HighlightSnippet
               snippet={result.snippet}
               matchStart={result.matchStart}
@@ -486,7 +486,7 @@ export function SearchDialog(): React.ReactElement {
         <DialogTitle className="sr-only">搜索对话</DialogTitle>
         {/* 搜索输入框 */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
-          <Search size={16} className="text-foreground/40 flex-shrink-0" />
+          <Search size={16} className="text-foreground/60 flex-shrink-0" />
           <input
             ref={inputRef}
             value={query}
@@ -495,13 +495,13 @@ export function SearchDialog(): React.ReactElement {
             onCompositionEnd={handleCompositionEnd}
             onKeyDown={handleKeyDown}
             placeholder="输入关键词，按 Enter 或点击搜索"
-            className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-foreground/40 outline-none"
+            className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-foreground/60 outline-none"
           />
           {query && (
             <button
               onClick={handleClearQuery}
               title="清空"
-              className="p-0.5 rounded text-foreground/30 hover:text-foreground/60 transition-colors"
+              className="p-0.5 rounded text-foreground/52 hover:text-foreground/76 transition-colors"
             >
               <X size={14} />
             </button>
@@ -513,7 +513,7 @@ export function SearchDialog(): React.ReactElement {
               'flex items-center gap-1 px-2 py-1 rounded text-[12px] font-medium transition-colors',
               canSearch
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'bg-foreground/[0.06] text-foreground/30 cursor-not-allowed'
+                : 'bg-foreground/[0.06] text-foreground/52 cursor-not-allowed'
             )}
           >
             {loading ? <Loader2 size={12} className="animate-spin" /> : <Search size={12} />}
@@ -527,7 +527,7 @@ export function SearchDialog(): React.ReactElement {
               'flex items-center gap-1 px-2 py-1 rounded text-[12px] font-medium transition-colors',
               trimmedQuery.length >= 2
                 ? 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20'
-                : 'bg-foreground/[0.06] text-foreground/30 cursor-not-allowed'
+                : 'bg-foreground/[0.06] text-foreground/52 cursor-not-allowed'
             )}
           >
             <Bot size={12} />
@@ -539,7 +539,7 @@ export function SearchDialog(): React.ReactElement {
         <div className="relative">
           <div ref={listRef} className="max-h-[400px] overflow-y-auto scrollbar-thin">
           {!hasSearched && (
-            <div className="py-12 text-center text-[13px] text-foreground/40">
+            <div className="py-12 text-center text-[13px] text-foreground/60">
               {trimmedQuery.length === 0
                 ? '输入关键词后按 Enter 或点击搜索'
                 : trimmedQuery.length < 2
@@ -549,14 +549,14 @@ export function SearchDialog(): React.ReactElement {
           )}
 
           {hasSearched && loading && allResults.length === 0 && (
-            <div className="py-12 flex items-center justify-center gap-2 text-[13px] text-foreground/40">
+            <div className="py-12 flex items-center justify-center gap-2 text-[13px] text-foreground/60">
               <Loader2 size={14} className="animate-spin" />
               <span>正在搜索...</span>
             </div>
           )}
 
           {hasSearched && !loading && allResults.length === 0 && (
-            <div className="py-8 flex flex-col items-center gap-3 text-[13px] text-foreground/40">
+            <div className="py-8 flex flex-col items-center gap-3 text-[13px] text-foreground/60">
               <span>未找到匹配结果</span>
               <button
                 onClick={() => void handleAgentSearch()}
@@ -571,7 +571,7 @@ export function SearchDialog(): React.ReactElement {
           {/* 标题匹配区域 */}
           {titleResults.length > 0 && (
             <div className="py-1 animate-in fade-in duration-150">
-              <div className="px-4 pt-2 pb-1 text-[11px] font-medium text-foreground/40 select-none">
+              <div className="px-4 pt-2 pb-1 text-[11px] font-medium text-foreground/60 select-none">
                 标题匹配
               </div>
               {titleResults.map((result, idx) => (
@@ -593,9 +593,9 @@ export function SearchDialog(): React.ReactElement {
           {/* 内容匹配区域 */}
           {(contentResults.length > 0 || (loading && hasSearched && titleResults.length > 0)) && (
             <div className="py-1 border-t border-border/30 animate-in fade-in duration-150">
-              <div className="px-4 pt-2 pb-1 flex items-center gap-2 text-[11px] font-medium text-foreground/40 select-none">
+              <div className="px-4 pt-2 pb-1 flex items-center gap-2 text-[11px] font-medium text-foreground/60 select-none">
                 <span>消息内容匹配</span>
-                {loading && <Loader2 size={12} className="animate-spin text-foreground/30" />}
+                {loading && <Loader2 size={12} className="animate-spin text-foreground/52" />}
               </div>
               {contentResults.map((result, i) => (
                 <SearchResultRow
@@ -616,7 +616,7 @@ export function SearchDialog(): React.ReactElement {
         </div>
 
         {/* 底部快捷键提示 */}
-        <div className="flex items-center gap-3 px-4 py-2 border-t border-border/30 text-[11px] text-foreground/30">
+        <div className="flex items-center gap-3 px-4 py-2 border-t border-border/30 text-[11px] text-foreground/52">
           <span className="flex items-center gap-1">
             <kbd className="px-1 py-0.5 rounded bg-foreground/[0.06] font-mono">↵</kbd>
             <span>{isQueryDirty || !hasSearched ? '搜索' : '打开'}</span>

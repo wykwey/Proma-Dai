@@ -464,6 +464,15 @@ function compareSemver(a: string, b: string): number {
  */
 export const RETIRED_DEFAULT_SKILL_SLUGS: readonly string[] = [
   'brainstorming',
+  // Office 文档 skill：已被 officecli skill 取代
+  'docx',
+  'pptx',
+  'xlsx',
+  // Chat 自定义 HTTP 工具能力未实现，tool-builder 属孤儿 skill
+  'tool-builder',
+  // Proma Cloud 生图 skill：已移除（不再使用生图能力）
+  'proma-generate-image',
+  'proma-gpt-image-2',
 ]
 
 const RETIRED_DEFAULT_SKILL_SLUG_SET = new Set(RETIRED_DEFAULT_SKILL_SLUGS)

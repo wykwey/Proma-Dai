@@ -92,7 +92,7 @@ export function GrepResultRenderer({ result, isError, input }: GrepResultRendere
       <CollapsibleResult
         content={result}
         renderContent={(text) => (
-          <pre className="rounded-md p-3 text-[12px] font-mono text-foreground/60 bg-muted/30 whitespace-pre-wrap break-all overflow-x-auto">
+          <pre className="rounded-md p-3 text-[12px] font-mono text-foreground/76 bg-muted/30 whitespace-pre-wrap break-all overflow-x-auto">
             {text}
           </pre>
         )}
@@ -109,7 +109,7 @@ export function GrepResultRenderer({ result, isError, input }: GrepResultRendere
     return (
       <div className="space-y-2">
         {/* 统计 */}
-        <div className="text-[11px] text-muted-foreground/60">
+        <div className="text-[11px] text-muted-foreground/85">
           {totalMatches} 个匹配，{groups.length} 个文件
         </div>
 

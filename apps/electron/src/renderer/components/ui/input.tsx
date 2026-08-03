@@ -12,7 +12,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           "flex h-9 w-full rounded-md border border-border/60 bg-background/40 px-3 py-1 text-base shadow-xs",
           "transition-[border-color,box-shadow,background-color] duration-150 ease-out",
           "file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground",
-          "placeholder:text-muted-foreground/70",
+          "placeholder:text-muted-foreground/90",
           // hover：边框轻微加深，给反馈但不抢戏
           "hover:border-border",
           // 聚焦：双层光晕（4px 半透明 ring + 1px 实色 border）+ 背景纯化，焦点位置清晰且不刺眼

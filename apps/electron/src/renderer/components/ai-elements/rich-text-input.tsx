@@ -753,7 +753,7 @@ export const RichTextInput = forwardRef<RichTextInputHandle, RichTextInputProps>
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="sticky bottom-1 float-right mr-2 z-10 p-0.5 rounded hover:bg-muted/80 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              className="sticky bottom-1 float-right mr-2 z-10 p-0.5 rounded hover:bg-muted/80 text-muted-foreground/78 hover:text-muted-foreground transition-colors"
               onClick={() => setIsManuallyCollapsed((prev) => !prev)}
             >
               {isManuallyCollapsed ? (
@@ -789,13 +789,13 @@ export const RichTextInput = forwardRef<RichTextInputHandle, RichTextInputProps>
         .ProseMirror p.is-editor-empty:first-child::before {
           content: attr(data-placeholder);
           float: left;
-          color: hsl(var(--muted-foreground));
+          color: hsl(var(--foreground) / 0.5);
           pointer-events: none;
           height: 0;
           max-width: 100%;
           white-space: normal;
           overflow-wrap: anywhere;
-          opacity: 0.5;
+          opacity: 1;
           font-style: ${suggestionActive ? 'italic' : 'normal'};
         }
         .ProseMirror::-webkit-scrollbar {

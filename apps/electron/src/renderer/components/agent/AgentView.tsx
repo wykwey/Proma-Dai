@@ -321,7 +321,7 @@ function AgentThinkingPopover({ agentThinking, onToggle, codexConfig }: AgentThi
             <>
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs font-medium text-foreground/80">思考深度</span>
+                  <span className="text-xs font-medium text-foreground/90">思考深度</span>
                   <span className="text-xs tabular-nums text-muted-foreground">
                     {OPENAI_THINKING_LABELS[normalizedLevel]}
                   </span>
@@ -341,7 +341,7 @@ function AgentThinkingPopover({ agentThinking, onToggle, codexConfig }: AgentThi
             </>
           ) : (
             <div className="flex items-center justify-between gap-4">
-              <span className="text-xs text-foreground/70">思考模式</span>
+              <span className="text-xs text-foreground/84">思考模式</span>
               <Switch
                 checked={isEnabled}
                 onCheckedChange={onToggle}
@@ -2771,7 +2771,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
             <Button
               type="button"
               variant="ghost"
-              className="h-8 min-w-10 rounded-md px-2 text-xs font-medium text-foreground/60 transition-transform hover:bg-muted/50 hover:text-foreground active:scale-[0.96]"
+              className="h-8 min-w-10 rounded-md px-2 text-xs font-medium text-foreground/76 transition-transform hover:bg-muted/50 hover:text-foreground active:scale-[0.96]"
               onClick={handleCodexFastModeChange}
               disabled={streaming || backgroundWaiting}
               aria-pressed={codexFastModeEnabled}
@@ -3058,9 +3058,9 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
                   onClick={() => handleSend(suggestion)}
                 >
                   <Sparkles className="size-4 shrink-0 mt-0.5 text-primary/60 group-hover:text-primary/80" />
-                  <span className="flex-1 min-w-0 text-foreground/80 group-hover:text-foreground line-clamp-3">{suggestion}</span>
+                  <span className="flex-1 min-w-0 text-foreground/90 group-hover:text-foreground line-clamp-3">{suggestion}</span>
                   <X
-                    className="size-3.5 shrink-0 mt-0.5 text-muted-foreground/40 hover:text-foreground transition-colors"
+                    className="size-3.5 shrink-0 mt-0.5 text-muted-foreground/68 hover:text-foreground transition-colors"
                     onClick={(e) => {
                       e.stopPropagation()
                       setPromptSuggestions((prev) => {

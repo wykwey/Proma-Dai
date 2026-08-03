@@ -126,14 +126,14 @@ export function CollapsedWorkspacePopover({
       >
         {/* 头部 */}
         <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-border/40">
-          <span className="text-[11px] font-medium text-foreground/50 uppercase tracking-wide">
+          <span className="text-[11px] font-medium text-foreground/70 uppercase tracking-wide">
             Agent 模式 · 项目
           </span>
           <div className="flex items-center gap-0.5">
             <button
               type="button"
               onClick={() => void createProjectFromFolder()}
-              className="p-1 rounded hover:bg-foreground/[0.06] text-foreground/35 hover:text-foreground/60 transition-colors"
+              className="p-1 rounded hover:bg-foreground/[0.06] text-foreground/56 hover:text-foreground/76 transition-colors"
               title="从本地文件夹创建项目"
             >
               <FolderInput size={13} />
@@ -141,7 +141,7 @@ export function CollapsedWorkspacePopover({
             <button
               type="button"
               onClick={handleStartCreate}
-              className="p-1 rounded hover:bg-foreground/[0.06] text-foreground/35 hover:text-foreground/60 transition-colors"
+              className="p-1 rounded hover:bg-foreground/[0.06] text-foreground/56 hover:text-foreground/76 transition-colors"
               title="新建空白项目"
             >
               <Plus size={13} />
@@ -160,10 +160,10 @@ export function CollapsedWorkspacePopover({
                 'w-full flex items-center gap-2 px-2 py-[5px] rounded-md text-[13px] transition-colors duration-100 text-left',
                 ws.id === currentWorkspaceId
                   ? 'bg-foreground/[0.08] text-foreground shadow-[0_1px_2px_0_rgba(0,0,0,0.05)]'
-                  : 'text-foreground/70 hover:bg-foreground/[0.04]',
+                  : 'text-foreground/84 hover:bg-foreground/[0.04]',
               )}
             >
-              <FolderOpen size={13} className="flex-shrink-0 text-foreground/40" />
+              <FolderOpen size={13} className="flex-shrink-0 text-foreground/60" />
               <span className="flex-1 min-w-0 truncate">{ws.name}</span>
               <LocalProjectBadge
                 projectRootPath={ws.projectRootPath}
@@ -174,7 +174,7 @@ export function CollapsedWorkspacePopover({
 
           {creating && (
             <div className="flex items-center gap-2 px-2 py-[5px]">
-              <FolderOpen size={13} className="flex-shrink-0 text-foreground/40" />
+              <FolderOpen size={13} className="flex-shrink-0 text-foreground/60" />
               <input
                 ref={createInputRef}
                 value={newName}

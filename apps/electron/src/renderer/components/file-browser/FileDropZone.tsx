@@ -299,8 +299,8 @@ export function FileDropZone({ workspaceSlug, sessionId, target = 'session', onF
                 onClick={handleSelectFiles}
                 onKeyDown={activateOnKey(handleSelectFiles)}
               >
-                <span className="text-[11px] text-muted-foreground/75">添加文件</span>
-                <Paperclip className="size-4 text-muted-foreground/60" />
+                <span className="text-[11px] text-muted-foreground/90">添加文件</span>
+                <Paperclip className="size-4 text-muted-foreground/85" />
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -320,8 +320,8 @@ export function FileDropZone({ workspaceSlug, sessionId, target = 'session', onF
                 onClick={onAttachFolder}
                 onKeyDown={activateOnKey(onAttachFolder)}
               >
-                <span className="text-[11px] text-muted-foreground/75">附加文件夹</span>
-                <FolderPlus className="size-4 text-muted-foreground/60" />
+                <span className="text-[11px] text-muted-foreground/90">附加文件夹</span>
+                <FolderPlus className="size-4 text-muted-foreground/85" />
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom">

@@ -201,7 +201,7 @@ export function ExitPlanModeBanner({ sessionId }: ExitPlanModeBannerProps): Reac
           <span className="text-sm font-medium text-foreground flex-1">Agent 计划待审批</span>
           <button
             type="button"
-            className="size-5 flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-muted/60 transition-colors"
+            className="size-5 flex items-center justify-center rounded-md text-muted-foreground/78 hover:text-foreground hover:bg-muted/60 transition-colors"
             onClick={handleDismiss}
             title="关闭并终止 Agent"
           >
@@ -230,8 +230,8 @@ export function ExitPlanModeBanner({ sessionId }: ExitPlanModeBannerProps): Reac
                 className={`
                   flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-all outline-none text-left
                   ${option.variant === 'destructive'
-                    ? 'bg-muted/50 text-foreground/80 hover:bg-destructive/10 hover:text-destructive'
-                    : 'bg-muted/50 text-foreground/80 hover:bg-muted'
+                    ? 'bg-muted/50 text-foreground/90 hover:bg-destructive/10 hover:text-destructive'
+                    : 'bg-muted/50 text-foreground/90 hover:bg-muted'
                   }
                   ${isFocused ? 'ring-2 ring-primary/50 ring-offset-1 ring-offset-card' : ''}
                 `}
@@ -244,10 +244,10 @@ export function ExitPlanModeBanner({ sessionId }: ExitPlanModeBannerProps): Reac
                 }}
                 disabled={submitting}
               >
-                <span className="text-[10px] shrink-0 text-muted-foreground/50">
+                <span className="text-[10px] shrink-0 text-muted-foreground/78">
                   {idx + 1}
                 </span>
-                <span className="shrink-0 text-muted-foreground/70">{option.icon}</span>
+                <span className="shrink-0 text-muted-foreground/90">{option.icon}</span>
                 <div className="flex flex-col min-w-0">
                   <span className="font-medium">{option.label}</span>
                   <span className="text-[11px] text-muted-foreground">{option.description}</span>
@@ -264,7 +264,7 @@ export function ExitPlanModeBanner({ sessionId }: ExitPlanModeBannerProps): Reac
           <div className="flex gap-2">
             <input
               type="text"
-              className="flex-1 px-3 py-2 rounded-lg text-xs bg-muted/40 focus:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/40 transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg text-xs bg-muted/40 focus:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/68 transition-colors"
               placeholder="输入修改意见..."
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
@@ -296,7 +296,7 @@ export function ExitPlanModeBanner({ sessionId }: ExitPlanModeBannerProps): Reac
 
       {/* 底部提示 */}
       <div className="flex items-center px-4 pb-3">
-        <span className="text-[10px] text-muted-foreground/40">
+        <span className="text-[10px] text-muted-foreground/68">
           点击选择 · ↑↓ Enter 确认 · 1-3 快速选择
         </span>
       </div>

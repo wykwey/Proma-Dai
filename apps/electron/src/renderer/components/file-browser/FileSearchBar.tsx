@@ -256,7 +256,7 @@ export function FileSearchBar({
         <input
           ref={inputRef}
           type="text"
-          className="flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/40"
+          className="flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground/68"
           placeholder={placeholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -337,7 +337,7 @@ function ResultItem({
           )}
           {dirPath && (
             <span
-              className="text-[10px] text-muted-foreground/55 truncate flex-1 min-w-0"
+              className="text-[10px] text-muted-foreground/80 truncate flex-1 min-w-0"
             >
               {dirPath}
             </span>

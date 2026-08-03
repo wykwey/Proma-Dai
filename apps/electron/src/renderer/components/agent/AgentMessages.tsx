@@ -490,7 +490,7 @@ function AgentRunningIndicator({ startedAt }: { startedAt?: number }): React.Rea
   return (
     <div className="flex items-center gap-2 min-h-[28px]">
       <Spinner size="sm" className="text-primary/75" />
-      <span className="text-[13px] font-light text-muted-foreground/75 tabular-nums">Agent Running {formatTime(elapsed)}</span>
+      <span className="text-[13px] font-light text-muted-foreground/90 tabular-nums">Agent Running {formatTime(elapsed)}</span>
     </div>
   )
 }

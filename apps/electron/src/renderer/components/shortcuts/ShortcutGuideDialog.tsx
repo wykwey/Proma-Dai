@@ -118,7 +118,7 @@ function ShortcutTile({ item }: { item: ShortcutGuideItem }): React.ReactElement
         {globalStatus && (
           <span className={cn(
             'text-[11px] leading-4',
-            unavailable ? 'text-destructive' : 'text-muted-foreground/75',
+            unavailable ? 'text-destructive' : 'text-muted-foreground/90',
           )}>
             {globalStatus}
           </span>
@@ -233,7 +233,7 @@ export function ShortcutGuideDialog(): React.ReactElement {
               </div>
             </div>
             <DialogPrimitive.Close
-              className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+              className="rounded-md p-1.5 text-muted-foreground/85 transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
               aria-label="关闭快捷键地图"
             >
               <X className="size-4" />
@@ -256,7 +256,7 @@ export function ShortcutGuideDialog(): React.ReactElement {
                       {SHORTCUT_CATEGORY_LABELS[category]}
                     </h2>
                     {category === 'global' && (
-                      <span className="text-[11px] text-muted-foreground/75">系统注册状态</span>
+                      <span className="text-[11px] text-muted-foreground/90">系统注册状态</span>
                     )}
                   </div>
                   <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">

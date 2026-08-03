@@ -189,7 +189,7 @@ export function GeneralSettings(): React.ReactElement {
                     onClick={() => fileInputRef.current?.click()}
                     className={cn(
                       'w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-[13px]',
-                      'text-foreground/60 hover:text-foreground hover:bg-foreground/[0.06] transition-colors'
+                      'text-foreground/76 hover:text-foreground hover:bg-foreground/[0.06] transition-colors'
                     )}
                   >
                     <ImagePlus className="size-4" />
@@ -233,7 +233,7 @@ export function GeneralSettings(): React.ReactElement {
                   {userProfile.userName}
                 </button>
               )}
-              <p className="text-[12px] text-foreground/40 mt-0.5">
+              <p className="text-[12px] text-foreground/60 mt-0.5">
                 点击头像更换，点击名字编辑
               </p>
             </div>
@@ -251,7 +251,7 @@ export function GeneralSettings(): React.ReactElement {
             label="语言"
             description="更多语言支持即将推出"
           >
-            <span className="text-[13px] text-foreground/40">简体中文</span>
+            <span className="text-[13px] text-foreground/60">简体中文</span>
           </SettingsRow>
           <SettingsToggle
             label="桌面通知"

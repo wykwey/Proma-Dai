@@ -294,18 +294,18 @@ export function ProcessBlockGroup({ blocks, isStreaming, isMessageTail = false, 
       >
         <ChevronRight
           className={cn(
-            'size-3 shrink-0 text-muted-foreground/40 transition-transform duration-150',
+            'size-3 shrink-0 text-muted-foreground/68 transition-transform duration-150',
             expanded && 'rotate-90',
           )}
         />
         <span className="min-w-0 truncate text-[14px] text-muted-foreground">{summary}</span>
         {collapseCountdown !== null && (
-          <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground/50">
+          <span className="shrink-0 text-[12px] tabular-nums text-muted-foreground/78">
             （{collapseCountdown}）
           </span>
         )}
         {visibleToolNames.length > 0 && (
-          <span className="flex shrink-0 items-center gap-1 text-muted-foreground/60">
+          <span className="flex shrink-0 items-center gap-1 text-muted-foreground/85">
             {visibleToolNames.map((toolName) => {
               const ToolIcon = getToolIcon(toolName)
               return (
@@ -317,7 +317,7 @@ export function ProcessBlockGroup({ blocks, isStreaming, isMessageTail = false, 
               )
             })}
             {hiddenToolCount > 0 && (
-              <span className="text-[11px] tabular-nums text-muted-foreground/60">
+              <span className="text-[11px] tabular-nums text-muted-foreground/85">
                 +{hiddenToolCount}
               </span>
             )}
@@ -341,7 +341,7 @@ export function ProcessBlockGroup({ blocks, isStreaming, isMessageTail = false, 
             {renderContentChildren()}
             <button
                 type="button"
-                className="flex items-center gap-1 text-xs text-foreground/40 hover:text-foreground/70 transition-colors"
+                className="flex items-center gap-1 text-xs text-foreground/60 hover:text-foreground/84 transition-colors"
                 onClick={() => {
                   userToggledRef.current = true
                   clearAutoCollapseTimers()

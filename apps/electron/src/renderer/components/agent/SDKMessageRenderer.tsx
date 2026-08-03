@@ -109,7 +109,7 @@ function CompactBoundaryDivider(): React.ReactElement {
   return (
     <div className="flex items-center gap-3 my-4 px-1">
       <div className="flex-1 h-px bg-border/40" />
-      <span className="shrink-0 text-[11px] text-muted-foreground/60 px-2 py-0.5 rounded-full border border-border/30 bg-muted/20">
+      <span className="shrink-0 text-[11px] text-muted-foreground/85 px-2 py-0.5 rounded-full border border-border/30 bg-muted/20">
         上下文已压缩
       </span>
       <div className="flex-1 h-px bg-border/40" />
@@ -132,7 +132,7 @@ function PermissionDeniedNotice({ message }: { message: SDKSystemMessage }): Rea
 
   return (
     <div className="my-3 pl-[46px] pr-1">
-      <div className="flex items-start gap-2.5 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-xs text-foreground/80">
+      <div className="flex items-start gap-2.5 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-xs text-foreground/90">
         <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -147,7 +147,7 @@ function PermissionDeniedNotice({ message }: { message: SDKSystemMessage }): Rea
             <p className="break-words text-muted-foreground">{denialMessage}</p>
           )}
           {reason && reason !== denialMessage && (
-            <p className="break-words text-muted-foreground/70">{reason}</p>
+            <p className="break-words text-muted-foreground/90">{reason}</p>
           )}
         </div>
       </div>
@@ -164,7 +164,7 @@ function CompactStatusNotice({ message }: { message: SDKSystemMessage }): React.
     return (
       <div className="flex items-center gap-3 my-4 px-1">
         <div className="flex-1 h-px bg-border/40" />
-        <span className="shrink-0 text-[11px] text-muted-foreground/60 px-2 py-0.5 rounded-full border border-border/30 bg-muted/20">
+        <span className="shrink-0 text-[11px] text-muted-foreground/85 px-2 py-0.5 rounded-full border border-border/30 bg-muted/20">
           开始压缩上下文
         </span>
         <div className="flex-1 h-px bg-border/40" />
@@ -175,7 +175,7 @@ function CompactStatusNotice({ message }: { message: SDKSystemMessage }): React.
     return (
       <div className="flex items-center gap-3 my-4 px-1">
         <div className="flex-1 h-px bg-border/40" />
-        <span className="shrink-0 text-[11px] text-muted-foreground/60 px-2 py-0.5 rounded-full border border-border/30 bg-muted/20">
+        <span className="shrink-0 text-[11px] text-muted-foreground/85 px-2 py-0.5 rounded-full border border-border/30 bg-muted/20">
           {message.message ?? '当前上下文无需压缩'}
         </span>
         <div className="flex-1 h-px bg-border/40" />
@@ -186,7 +186,7 @@ function CompactStatusNotice({ message }: { message: SDKSystemMessage }): React.
     const error = typeof message.compact_error === 'string' ? message.compact_error : undefined
     return (
       <div className="my-3 pl-[46px] pr-1">
-        <div className="flex items-start gap-2.5 rounded-md border border-destructive/25 bg-destructive/5 px-3 py-2.5 text-xs text-foreground/80">
+        <div className="flex items-start gap-2.5 rounded-md border border-destructive/25 bg-destructive/5 px-3 py-2.5 text-xs text-foreground/90">
           <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-destructive" />
           <div className="min-w-0 space-y-1">
             <div className="font-medium text-foreground">上下文压缩失败</div>
@@ -608,7 +608,7 @@ export function AssistantTurnRenderer({ turn, allMessages, basePath, onFork, onR
               </MessageAction>
             )}
             {showStoppedBadge && (
-              <Badge variant="outline" className="text-xs text-muted-foreground/70 border-muted-foreground/30 shrink-0">
+              <Badge variant="outline" className="text-xs text-muted-foreground/90 border-muted-foreground/30 shrink-0">
                 已被用户中断
               </Badge>
             )}
@@ -981,11 +981,11 @@ function UserInputMessage({ message }: { message: SDKUserMessage }): React.React
       <div className="flex items-start gap-2.5 mb-2.5">
         <UserAvatar avatar={userProfile.avatar} size={35} />
         <div className="flex flex-col justify-between h-[35px]">
-          <span className="text-sm font-semibold text-foreground/60 leading-none">{userProfile.userName}</span>
+          <span className="text-sm font-semibold text-foreground/76 leading-none">{userProfile.userName}</span>
           {(meta.createdAt || isScheduledRun) && (
             <span className="flex items-center gap-2 leading-none">
               {meta.createdAt && (
-                <span className="message-time text-[10px] text-foreground/[0.38]">{formatMessageTime(meta.createdAt)}</span>
+                <span className="message-time text-[10px] text-foreground/[0.56]">{formatMessageTime(meta.createdAt)}</span>
               )}
               {isScheduledRun && (
                 <ScheduledRunBadge />

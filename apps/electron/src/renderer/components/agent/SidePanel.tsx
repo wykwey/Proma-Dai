@@ -535,7 +535,7 @@ export function SidePanel({ sessionId, sessionPath, activeTab, onTabChange, widt
                   </FileSearchBar>
                   <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin pt-1">
                     {/* 拖拽引用提示：引用块样式，左侧竖线 + 缩进，与下方文件列表内容左对齐 */}
-                    <div className="mb-1.5 ml-4 border-l-2 border-primary/40 pl-2 text-[11px] leading-4 text-foreground/75">
+                    <div className="mb-1.5 ml-4 border-l-2 border-primary/40 pl-2 text-[11px] leading-4 text-foreground/88">
                       支持拖拽文件或文件夹到输入框，实现引用
                     </div>
                     {showProjectFiles && wsAttachedFiles.length > 0 && (
@@ -985,7 +985,7 @@ function AttachedDirTree({ dirPath, onDetach, selectedPaths, onSelect, refreshVe
           />
           {children.length === 0 && loaded && (
             <div
-              className="text-[11px] text-muted-foreground/50 py-1"
+              className="text-[11px] text-muted-foreground/78 py-1"
               style={{ paddingLeft: paddingLeft + 24 }}
             >
               空文件夹
@@ -1329,7 +1329,7 @@ function AttachedDirItem({ entry, depth, selectedPaths, onSelect, refreshVersion
           />
           {children.length === 0 && loaded && (
             <div
-              className="text-[11px] text-muted-foreground/50 py-1"
+              className="text-[11px] text-muted-foreground/78 py-1"
               style={{ paddingLeft: paddingLeft + 24 }}
             >
               空文件夹

@@ -443,7 +443,7 @@ function TreeNode(props: TreeNodeProps): React.ReactElement {
       <div
         className={cn(
           'group flex items-center gap-1 px-1 py-0.5 rounded text-xs cursor-pointer select-none',
-          isSelected ? 'bg-accent text-foreground' : 'hover:bg-accent/60 text-foreground/80',
+          isSelected ? 'bg-accent text-foreground' : 'hover:bg-accent/60 text-foreground/90',
         )}
         style={{ paddingLeft: `${depth * 12 + 4}px` }}
         onClick={() => !isRenaming && props.onSelect(node)}

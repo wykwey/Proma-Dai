@@ -465,7 +465,7 @@ export function WorkspaceMemoryTab({ workspaceSlug, search }: WorkspaceMemoryTab
         <SettingsCard divided={false} className="min-h-0 overflow-hidden">
           <div className="flex h-full min-h-0 flex-col">
             <div className="flex items-center justify-between border-b border-border/50 px-3 py-2">
-              <div className="text-[13px] font-medium text-foreground/75">记忆文件</div>
+              <div className="text-[13px] font-medium text-foreground/88">记忆文件</div>
               <button
                 type="button"
                 title="刷新"
@@ -483,7 +483,7 @@ export function WorkspaceMemoryTab({ workspaceSlug, search }: WorkspaceMemoryTab
                 meta="Proma 工作区项目指令"
                 onClick={() => void openClaude(summary)}
               />
-              <div className="mt-3 px-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
+              <div className="mt-3 px-2 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/90">
                 Auto Memory
               </div>
               <div className="space-y-0.5">
@@ -654,10 +654,10 @@ function MemoryStatCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <div className="text-sm font-medium text-foreground">{title}</div>
-          <div className="text-xs font-medium tabular-nums text-foreground/65">{value}</div>
+          <div className="text-xs font-medium tabular-nums text-foreground/80">{value}</div>
         </div>
         <div className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</div>
-        <div className="mt-1 text-[11px] text-muted-foreground/80">{detail}</div>
+        <div className="mt-1 text-[11px] text-muted-foreground/92">{detail}</div>
       </div>
     </button>
   )
@@ -682,7 +682,7 @@ function FileButton({
       onClick={onClick}
       className={cn(
         'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] transition-colors',
-        active ? 'bg-accent text-accent-foreground' : 'text-foreground/80 hover:bg-accent/60',
+        active ? 'bg-accent text-accent-foreground' : 'text-foreground/90 hover:bg-accent/60',
       )}
     >
       <span className="shrink-0 text-muted-foreground">{icon}</span>
@@ -719,7 +719,7 @@ function MemoryTreeNode({
         onClick={() => isDirectory ? onToggle(node.relativePath) : onOpen(node.relativePath)}
         className={cn(
           'flex w-full items-center gap-1.5 rounded-md py-1.5 pr-2 text-left text-[13px] transition-colors',
-          isActive ? 'bg-accent text-accent-foreground' : 'text-foreground/80 hover:bg-accent/60',
+          isActive ? 'bg-accent text-accent-foreground' : 'text-foreground/90 hover:bg-accent/60',
         )}
         style={{ paddingLeft }}
       >
@@ -730,7 +730,7 @@ function MemoryTreeNode({
         )}
         <span className="min-w-0 flex-1 truncate">{node.name}</span>
         {!isDirectory && node.size != null && (
-          <span className="shrink-0 text-[10px] text-muted-foreground/75">{formatBytes(node.size)}</span>
+          <span className="shrink-0 text-[10px] text-muted-foreground/90">{formatBytes(node.size)}</span>
         )}
       </button>
       {isDirectory && isExpanded && node.children && (

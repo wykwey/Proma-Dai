@@ -453,19 +453,19 @@ function TreeNodeList({
 
           {/* 路径（当路径不等于文件名时显示） */}
           {node.path !== node.name && (
-            <span className="text-[10px] text-muted-foreground/60 truncate max-w-[140px] shrink-[2]">
+            <span className="text-[10px] text-muted-foreground/85 truncate max-w-[140px] shrink-[2]">
               {node.path}
             </span>
           )}
 
           {/* 选中文件夹时的快捷键提示 */}
           {isSelected && node.type === 'dir' && node.children.length > 0 && !node.expanded && (
-            <span className="text-[10px] text-muted-foreground/60 shrink-0 bg-muted/50 rounded px-1 py-px">
+            <span className="text-[10px] text-muted-foreground/85 shrink-0 bg-muted/50 rounded px-1 py-px">
               Tab 展开
             </span>
           )}
           {isSelected && node.type === 'dir' && node.children.length > 0 && node.expanded && (
-            <span className="text-[10px] text-muted-foreground/60 shrink-0 bg-muted/50 rounded px-1 py-px">
+            <span className="text-[10px] text-muted-foreground/85 shrink-0 bg-muted/50 rounded px-1 py-px">
               Tab 折叠
             </span>
           )}

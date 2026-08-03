@@ -64,7 +64,7 @@ export function WriteResultRenderer({ result, isError, input }: WriteResultRende
   if (!content) {
     return (
       <div className="text-[12px] text-muted-foreground flex items-center gap-1">
-        已写入 {filePath ? <FilePathChip filePath={filePath} /> : <span className="font-mono text-foreground/70">文件</span>}
+        已写入 {filePath ? <FilePathChip filePath={filePath} /> : <span className="font-mono text-foreground/84">文件</span>}
       </div>
     )
   }

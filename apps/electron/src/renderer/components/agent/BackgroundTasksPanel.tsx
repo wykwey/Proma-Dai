@@ -30,7 +30,7 @@ export function BackgroundTasksPanel({
   return (
     <div className={cn('mt-2', className)}>
       {/* 标题 */}
-      <div className="text-xs text-foreground/60 mb-1.5 px-0.5">
+      <div className="text-xs text-foreground/76 mb-1.5 px-0.5">
         {tasks.length} 个后台任务：
       </div>
 
@@ -39,9 +39,9 @@ export function BackgroundTasksPanel({
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-border/50 bg-muted/30">
-              <th className="text-left py-1.5 px-2 font-medium text-foreground/50 w-8 text-[11px]">#</th>
-              <th className="text-left py-1.5 px-2 font-medium text-foreground/50 text-[11px]">任务描述</th>
-              <th className="text-left py-1.5 px-2 font-medium text-foreground/50 w-20 text-[11px]">状态</th>
+              <th className="text-left py-1.5 px-2 font-medium text-foreground/70 w-8 text-[11px]">#</th>
+              <th className="text-left py-1.5 px-2 font-medium text-foreground/70 text-[11px]">任务描述</th>
+              <th className="text-left py-1.5 px-2 font-medium text-foreground/70 w-20 text-[11px]">状态</th>
             </tr>
           </thead>
           <tbody>
@@ -55,7 +55,7 @@ export function BackgroundTasksPanel({
                   className="border-b border-border/30 last:border-b-0 hover:bg-muted/30 transition-colors"
                 >
                   {/* 序号 */}
-                  <td className="py-1.5 px-2 text-foreground/40 font-mono text-[10px]">
+                  <td className="py-1.5 px-2 text-foreground/60 font-mono text-[10px]">
                     {index + 1}
                   </td>
 
@@ -63,7 +63,7 @@ export function BackgroundTasksPanel({
                   <td className="py-1.5 px-2">
                     <div className="flex items-center gap-1.5">
                       <Icon className="size-3 text-muted-foreground shrink-0" />
-                      <span className="text-foreground/70 text-[11px]">{description}</span>
+                      <span className="text-foreground/84 text-[11px]">{description}</span>
                     </div>
                   </td>
 

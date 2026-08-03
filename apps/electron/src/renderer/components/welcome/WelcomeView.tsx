@@ -154,7 +154,7 @@ export function WelcomeView(): React.ReactElement {
   // 短暂的过渡状态（通常几十毫秒内就会被 TabContent 替换）
   return (
     <div className="flex h-full items-center justify-center">
-      <Loader2 className="size-5 animate-spin text-muted-foreground/40" />
+      <Loader2 className="size-5 animate-spin text-muted-foreground/68" />
     </div>
   )
 }

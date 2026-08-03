@@ -290,14 +290,14 @@ export function ModelSelector({
 
           {/* 搜索栏 */}
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/60">
-            <Search className="size-5 text-muted-foreground/60 flex-shrink-0" />
+            <Search className="size-5 text-muted-foreground/85 flex-shrink-0" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="搜索模型..."
-              className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground/50"
+              className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground/78"
               autoFocus
             />
           </div>
@@ -363,7 +363,7 @@ export function ModelSelector({
                           />
                           <span className={cn(
                             'flex-1 text-sm truncate',
-                            isSelected ? 'font-medium text-foreground' : 'text-foreground/80'
+                            isSelected ? 'font-medium text-foreground' : 'text-foreground/90'
                           )}>
                             {option.modelName}
                           </span>

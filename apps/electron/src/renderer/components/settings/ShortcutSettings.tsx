@@ -217,7 +217,7 @@ function ShortcutRecorder({
           <span className={`text-xs px-2 py-1 rounded border ${
             recording
               ? 'bg-primary/10 text-primary border-primary/20 animate-pulse'
-              : 'bg-muted text-foreground/80 border-border'
+              : 'bg-muted text-foreground/90 border-border'
           }`}>
             {recording
               ? pendingKeys
@@ -246,7 +246,7 @@ function ShortcutRecorder({
     return (
       <button
         type="button"
-        className="text-xs px-2.5 py-1 rounded-md bg-muted/40 text-muted-foreground/70 italic transition-colors hover:bg-muted hover:text-foreground/80"
+        className="text-xs px-2.5 py-1 rounded-md bg-muted/40 text-muted-foreground/90 italic transition-colors hover:bg-muted hover:text-foreground/90"
         onClick={handleStartRecording}
         title="点击录制新快捷键"
       >
@@ -567,7 +567,7 @@ export function ShortcutSettings(): React.ReactElement {
               {SHORTCUT_CATEGORY_LABELS[category]}
             </h3>
             {category === 'global' && (
-              <p className="text-xs text-muted-foreground/70 mb-2">
+              <p className="text-xs text-muted-foreground/90 mb-2">
                 全局快捷键在应用未聚焦时也能触发，可能与系统或其他应用冲突
               </p>
             )}

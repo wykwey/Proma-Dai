@@ -433,7 +433,7 @@ export function TabSwitcher(): ReactElement | null {
                 <div className="mx-5 my-1.5 h-px bg-border/50" aria-hidden="true" />
               )}
               <div className="px-5 pt-1 pb-1 flex items-center justify-between gap-3">
-                <span className="text-[11px] font-medium text-foreground/55">{section.title}</span>
+                <span className="text-[11px] font-medium text-foreground/72">{section.title}</span>
                 <span className="text-[10px] text-muted-foreground truncate">{section.description}</span>
               </div>
               {section.candidates.map((candidate) => {
@@ -513,7 +513,7 @@ function SwitcherCandidateRow({
           aria-hidden="true"
         />
       )}
-      <span className="w-auto px-2 shrink-0 text-[10px] leading-4 rounded-full bg-foreground/[0.06] text-foreground/45 font-medium flex items-center gap-1">
+      <span className="w-auto px-2 shrink-0 text-[10px] leading-4 rounded-full bg-foreground/[0.06] text-foreground/64 font-medium flex items-center gap-1">
         {candidate.isDelegation ? (
           <>
             <GitBranch className="size-2.5" />
@@ -543,7 +543,7 @@ function SwitcherCandidateRow({
 
 function Kbd({ children }: { children: ReactNode }): ReactElement {
   return (
-    <kbd className="inline-flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded border border-border/60 bg-background/80 text-[10px] font-medium text-foreground/80 shadow-sm">
+    <kbd className="inline-flex items-center justify-center min-w-[20px] h-[18px] px-1.5 rounded border border-border/60 bg-background/80 text-[10px] font-medium text-foreground/90 shadow-sm">
       {children}
     </kbd>
   )
