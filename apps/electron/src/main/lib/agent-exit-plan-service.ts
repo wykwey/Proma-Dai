@@ -109,6 +109,14 @@ export class AgentExitPlanService {
         })
         return { sessionId, targetMode: 'bypassPermissions' }
       }
+      case 'approve_once': {
+        // 仅批准本次：放行当前 ExitPlanMode，但不切换权限模式，保持 plan。
+        pending.resolve({
+          behavior: 'allow' as const,
+          updatedInput: pending.toolInput,
+        })
+        return { sessionId, targetMode: null }
+      }
       case 'deny': {
         // 拒绝计划
         pending.resolve({

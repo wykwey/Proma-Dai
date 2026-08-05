@@ -166,7 +166,7 @@ describe('Agent 会话 JSONL 读取', () => {
 })
 
 describe('Agent 会话 runtime 元数据', () => {
-  test('Given 已保存 OpenAI medium 默认值 When 新建 Pi 或 Claude 会话 Then 默认并持久化 medium', () => {
+  test('Given 已保存 OpenAI medium 默认值 When 新建会话或旧调用方传 Claude Then 均归一为 Pi 并持久化 medium', () => {
     const settingsPath = join(tempHome, '.proma', 'settings.json')
     mkdirSync(join(tempHome, '.proma'), { recursive: true })
     writeFileSync(settingsPath, JSON.stringify({
@@ -177,16 +177,16 @@ describe('Agent 会话 runtime 元数据', () => {
 
     try {
       const defaultRuntimeSession = manager.createAgentSession('默认内核会话')
-      const claudeRuntimeSession = manager.createAgentSession('Claude 内核会话', undefined, undefined, undefined, 'claude')
+      const legacyRuntimeSession = manager.createAgentSession('旧调用方会话', undefined, undefined, undefined, 'claude')
 
       expect(defaultRuntimeSession.agentRuntime).toBe('pi')
-      expect(claudeRuntimeSession.agentRuntime).toBe('claude')
+      expect(legacyRuntimeSession.agentRuntime).toBe('pi')
       expect(manager.getAgentSessionMeta(defaultRuntimeSession.id)?.agentRuntime).toBe('pi')
-      expect(manager.getAgentSessionMeta(claudeRuntimeSession.id)?.agentRuntime).toBe('claude')
+      expect(manager.getAgentSessionMeta(legacyRuntimeSession.id)?.agentRuntime).toBe('pi')
       expect(defaultRuntimeSession.reasoningLevel).toBe('medium')
-      expect(claudeRuntimeSession.reasoningLevel).toBe('medium')
+      expect(legacyRuntimeSession.reasoningLevel).toBe('medium')
       expect(manager.getAgentSessionMeta(defaultRuntimeSession.id)?.reasoningLevel).toBe('medium')
-      expect(manager.getAgentSessionMeta(claudeRuntimeSession.id)?.reasoningLevel).toBe('medium')
+      expect(manager.getAgentSessionMeta(legacyRuntimeSession.id)?.reasoningLevel).toBe('medium')
     } finally {
       rmSync(settingsPath, { force: true })
     }

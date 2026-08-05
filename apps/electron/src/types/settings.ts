@@ -60,7 +60,7 @@ export const DEFAULT_THEME_MODE: ThemeMode = 'dark'
 /** 默认特殊风格 */
 export const DEFAULT_THEME_STYLE: ThemeStyle = 'default'
 
-/** 新建 Agent 会话与自动任务的默认 runtime。历史持久化记录缺失 runtime 时仍按 Claude 兼容。 */
+/** 新建 Agent 会话与自动任务的默认 runtime。新执行统一使用 Pi。 */
 export const DEFAULT_AGENT_RUNTIME: AgentRuntime = 'pi'
 
 /** Markdown 预览字号档位 */
@@ -79,11 +79,11 @@ export interface AppSettings {
   agentChannelId?: string
   /** Agent 默认模型 ID */
   agentModelId?: string
-  /** Claude Agent 可用渠道 ID 列表（由渠道启用状态与协议兼容性派生） */
+  /** @deprecated 旧 Claude runtime 渠道白名单，仅用于兼容读取历史设置。 */
   agentChannelIds?: string[]
   /** Agent 当前工作区 ID */
   agentWorkspaceId?: string
-  /** 新 Agent 会话默认使用的 runtime；历史会话缺省仍按 claude 兼容。 */
+  /** 新 Agent 会话默认使用的 runtime；当前产品写入值固定为 pi。 */
   agentRuntime?: AgentRuntime
   /** Windows 上 Agent Bash 工具的运行环境；默认自动选择 Git Bash，WSL 需用户显式启用。 */
   windowsShellPreference?: WindowsShellPreference

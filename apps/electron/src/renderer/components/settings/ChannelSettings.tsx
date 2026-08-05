@@ -10,11 +10,10 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { PROVIDER_LABELS, isAgentCompatibleProvider } from '@proma/shared'
+import { PROVIDER_LABELS } from '@proma/shared'
 import type { Channel } from '@proma/shared'
 import { getChannelLogo } from '@/lib/model-logo'
-import { getEnabledClaudeAgentChannelIds } from '@/lib/agent-channel-selection'
-import { agentChannelIdAtom, agentModelIdAtom, agentChannelIdsAtom } from '@/atoms/agent-atoms'
+import { agentChannelIdAtom, agentModelIdAtom } from '@/atoms/agent-atoms'
 import { channelsAtom } from '@/atoms/chat-atoms'
 import { SettingsSection, SettingsCard, SettingsRow } from './primitives'
 import {
@@ -39,19 +38,8 @@ export function ChannelSettings(): React.ReactElement {
   const [loading, setLoading] = React.useState(true)
   const [agentChannelId, setAgentChannelId] = useAtom(agentChannelIdAtom)
   const [, setAgentModelId] = useAtom(agentModelIdAtom)
-  const [agentChannelIds, setAgentChannelIds] = useAtom(agentChannelIdsAtom)
   const setGlobalChannels = useSetAtom(channelsAtom)
   const [deleteTarget, setDeleteTarget] = React.useState<Channel | null>(null)
-  const agentChannelIdsRef = React.useRef(agentChannelIds)
-  const agentChannelIdRef = React.useRef(agentChannelId)
-
-  React.useEffect(() => {
-    agentChannelIdsRef.current = agentChannelIds
-  }, [agentChannelIds])
-
-  React.useEffect(() => {
-    agentChannelIdRef.current = agentChannelId
-  }, [agentChannelId])
 
   /** 加载渠道列表 */
   const loadChannels = React.useCallback(async (): Promise<Channel[]> => {
@@ -72,53 +60,19 @@ export function ChannelSettings(): React.ReactElement {
     loadChannels()
   }, [loadChannels])
 
-  // 渠道的启用状态是唯一开关：同步衍生的 Claude 白名单，清理旧版独立开关留下的状态。
-  React.useEffect(() => {
-    if (loading) return
-    const derivedIds = getEnabledClaudeAgentChannelIds(channels)
-    const currentIds = agentChannelIdsRef.current
-    const unchanged = derivedIds.length === currentIds.length
-      && derivedIds.every((id, index) => id === currentIds[index])
-    if (unchanged) return
-
-    agentChannelIdsRef.current = derivedIds
-    setAgentChannelIds(derivedIds)
-    window.electronAPI.updateSettings({ agentChannelIds: derivedIds }).catch(console.error)
-  }, [channels, loading, setAgentChannelIds])
-
   const syncAgentChannelEligibility = React.useCallback(async (
     channel: Channel,
-    eligible: boolean,
+    enabled: boolean,
   ): Promise<void> => {
-    const currentIds = agentChannelIdsRef.current
+    if (enabled || agentChannelId !== channel.id) return
 
-    if (eligible) {
-      if (currentIds.includes(channel.id)) return
-      const newIds = [...currentIds, channel.id]
-      agentChannelIdsRef.current = newIds
-      setAgentChannelIds(newIds)
-      await window.electronAPI.updateSettings({ agentChannelIds: newIds }).catch(console.error)
-      return
-    }
-
-    if (!currentIds.includes(channel.id)) return
-    const newIds = currentIds.filter((id) => id !== channel.id)
-    agentChannelIdsRef.current = newIds
-    setAgentChannelIds(newIds)
-
-    const updates: Parameters<typeof window.electronAPI.updateSettings>[0] = {
-      agentChannelIds: newIds,
-    }
-    if (agentChannelIdRef.current === channel.id) {
-      agentChannelIdRef.current = null
-      setAgentChannelId(null)
-      setAgentModelId(null)
-      updates.agentChannelId = undefined
-      updates.agentModelId = undefined
-    }
-
-    await window.electronAPI.updateSettings(updates).catch(console.error)
-  }, [setAgentChannelIds, setAgentChannelId, setAgentModelId])
+    setAgentChannelId(null)
+    setAgentModelId(null)
+    await window.electronAPI.updateSettings({
+      agentChannelId: undefined,
+      agentModelId: undefined,
+    }).catch(console.error)
+  }, [agentChannelId, setAgentChannelId, setAgentModelId])
 
   /** 删除渠道（通过弹窗确认） */
   const handleDeleteRequest = (channel: Channel): void => {
@@ -132,10 +86,6 @@ export function ChannelSettings(): React.ReactElement {
     try {
       await window.electronAPI.deleteChannel(target.id)
 
-      // 从 Agent 渠道列表中移除
-      const newIds = agentChannelIds.filter((id) => id !== target.id)
-      setAgentChannelIds(newIds)
-
       // 如果删除的是当前选中的 Agent 渠道，清空选择
       if (agentChannelId === target.id) {
         setAgentChannelId(null)
@@ -143,7 +93,6 @@ export function ChannelSettings(): React.ReactElement {
       }
 
       await window.electronAPI.updateSettings({
-        agentChannelIds: newIds,
         ...(agentChannelId === target.id && { agentChannelId: undefined, agentModelId: undefined }),
       })
 
@@ -158,10 +107,7 @@ export function ChannelSettings(): React.ReactElement {
   const handleToggle = async (channel: Channel): Promise<void> => {
     try {
       const savedChannel = await window.electronAPI.updateChannel(channel.id, { enabled: !channel.enabled })
-      await syncAgentChannelEligibility(
-        savedChannel,
-        savedChannel.enabled && isAgentCompatibleProvider(savedChannel.provider),
-      )
+      await syncAgentChannelEligibility(savedChannel, savedChannel.enabled)
 
       await loadChannels()
     } catch (error) {
@@ -310,24 +256,13 @@ function ChannelRow({ channel, onEdit, onDelete, onToggle }: ChannelRowProps): R
   )
 }
 
-function AgentCoreChips({ provider }: Pick<Channel, 'provider'>): React.ReactElement {
-  const supportsClaude = isAgentCompatibleProvider(provider)
-
+function AgentCoreChips(_props: Pick<Channel, 'provider'>): React.ReactElement {
   return (
     <div className="inline-flex items-center gap-1" aria-label="支持的 Agent Core">
-      {supportsClaude && (
-        <Badge
-          variant="outline"
-          className="px-1.5 py-0 text-[10px] font-medium leading-5"
-          title="Claude Agent SDK（新功能不再支持，将于 8 月中旬彻底下线）"
-        >
-          Claude
-        </Badge>
-      )}
       <Badge
         variant="outline"
         className="px-1.5 py-0 text-[10px] font-medium leading-5"
-        title="Pi Agent SDK（推荐，新功能仅在 Pi 上提供）"
+        title="Pi Agent SDK"
       >
         Pi
       </Badge>

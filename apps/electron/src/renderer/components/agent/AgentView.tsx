@@ -17,7 +17,7 @@ import * as React from 'react'
 import { unstable_batchedUpdates } from 'react-dom'
 import { useAtom, useAtomValue, useSetAtom, useStore } from 'jotai'
 import { toast } from 'sonner'
-import { Box, CornerDownLeft, Square, Settings, X, Copy, Check, Brain, Sparkles, ChevronDown, Paperclip } from 'lucide-react'
+import { CornerDownLeft, Square, Settings, X, Copy, Check, Brain, Sparkles, Paperclip } from 'lucide-react'
 import { AgentMessages } from './AgentMessages'
 import { AgentHeader } from './AgentHeader'
 import { AgentMessageQueue } from './AgentMessageQueue'
@@ -67,7 +67,6 @@ import {
   agentSessionStreamingStateAtomFamily,
   agentChannelIdAtom,
   agentModelIdAtom,
-  agentChannelIdsAtom,
   agentRuntimeAtom,
   agentSessionChannelMapAtom,
   agentSessionModelMapAtom,
@@ -355,131 +354,6 @@ function AgentThinkingPopover({ agentThinking, onToggle, codexConfig }: AgentThi
   )
 }
 
-interface AgentRuntimeOption {
-  value: AgentRuntime
-  label: string
-  description: string
-  badge?: string
-  badgeTone?: 'recommended' | 'deprecated'
-  notice?: string
-}
-
-// Pi 为默认与推荐内核，Claude Agent SDK 计划于 2026 年 8 月中旬彻底下线
-const AGENT_RUNTIME_OPTIONS: AgentRuntimeOption[] = [
-  {
-    value: 'pi',
-    label: 'Pi',
-    description: 'Pi Agent SDK，Proma 默认内核，新功能仅在 Pi 上提供',
-    badge: '推荐',
-    badgeTone: 'recommended',
-  },
-  {
-    value: 'claude',
-    label: 'Claude',
-    description: 'Claude Agent SDK',
-    badge: '即将下线',
-    badgeTone: 'deprecated',
-    notice: '新功能已不再支持，将于 8 月中旬彻底下线，建议尽快切换到 Pi',
-  },
-]
-
-interface AgentRuntimeSelectorProps {
-  runtime: AgentRuntime
-  onChange: (runtime: AgentRuntime) => void
-}
-
-function AgentRuntimeSelector({ runtime, onChange }: AgentRuntimeSelectorProps): React.ReactElement {
-  const [open, setOpen] = React.useState(false)
-  const current = AGENT_RUNTIME_OPTIONS.find((option) => option.value === runtime) ?? AGENT_RUNTIME_OPTIONS[0]!
-
-  const handleSelect = (nextRuntime: AgentRuntime): void => {
-    onChange(nextRuntime)
-    setOpen(false)
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              aria-label={`Agent 内核：${current.label}`}
-              className="model-selector-trigger flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-            >
-              <Box className="size-3.5" />
-              <span>{current.label}</span>
-              <ChevronDown className="size-3" />
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[240px]">
-          <p className="font-medium">{current.description}</p>
-          {current.notice && <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">{current.notice}</p>}
-          <p className="mt-0.5 text-xs text-muted-foreground">切换当前会话下一轮使用的内核</p>
-        </TooltipContent>
-      </Tooltip>
-      <PopoverContent
-        side="top"
-        align="start"
-        sideOffset={8}
-        className="w-[248px] p-1.5"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <div className="flex flex-col gap-1">
-          {AGENT_RUNTIME_OPTIONS.map((option) => {
-            const active = runtime === option.value
-            return (
-              <Button
-                key={option.value}
-                type="button"
-                variant="ghost"
-                aria-pressed={active}
-                className={cn(
-                  'h-auto justify-start rounded-md px-2.5 py-2 text-left',
-                  active && 'bg-accent text-accent-foreground'
-                )}
-                onClick={() => handleSelect(option.value)}
-              >
-                <div className="flex w-full items-center gap-2">
-                  <Box className="size-4 shrink-0 text-muted-foreground" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-medium">{option.label}</span>
-                      {option.badge && (
-                        <span
-                          className={cn(
-                            'rounded-sm px-1 py-px text-[10px] font-medium leading-tight',
-                            option.badgeTone === 'deprecated'
-                              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
-                              : 'bg-primary/10 text-primary'
-                          )}
-                        >
-                          {option.badge}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-0.5 whitespace-normal text-[11px] font-normal leading-snug text-muted-foreground">
-                      {option.description}
-                    </div>
-                    {option.notice && (
-                      <div className="mt-0.5 whitespace-normal text-[11px] font-normal leading-snug text-amber-600 dark:text-amber-400">
-                        {option.notice}
-                      </div>
-                    )}
-                  </div>
-                  {active && <Check className="size-3.5 shrink-0 self-start" />}
-                </div>
-              </Button>
-            )
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
-  )
-}
-
 export function AgentView({ sessionId }: { sessionId: string }): React.ReactElement {
   const [persistedSDKMessages, setPersistedSDKMessages] = React.useState<SDKMessage[]>([])
   const persistedSDKMessagesRef = React.useRef<SDKMessage[]>([])
@@ -518,8 +392,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   const hasSessionMeta = Boolean(sessionMeta)
   const agentChannelId = sessionMetaChannelId ?? sessionChannelMap.get(sessionId) ?? defaultChannelId
   const agentModelId = sessionMetaModelId ?? sessionModelMap.get(sessionId) ?? defaultModelId
-  const agentChannelIds = useAtomValue(agentChannelIdsAtom)
-  const [agentRuntime, setAgentRuntime] = useAtom(agentRuntimeAtom)
+  const agentRuntime = useAtomValue(agentRuntimeAtom)
   const [agentThinking, setAgentThinking] = useAtom(agentThinkingAtom)
   const agentEffort = useAtomValue(agentEffortAtom)
   const setSettingsOpen = useSetAtom(settingsOpenAtom)
@@ -548,6 +421,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   const sessionAgentRuntime: AgentRuntime = hasSessionMeta
     ? sessionMeta?.agentRuntime ?? 'claude'
     : agentRuntime
+  const isLegacyReadOnlySession = hasSessionMeta && sessionAgentRuntime !== 'pi'
   // 只有会话元数据尚未加载时，才允许使用全局默认值初始化新会话。
   React.useEffect(() => {
     if (!sessionId) return
@@ -741,18 +615,11 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     : normalizeReasoningCapabilityLevel(effectiveReasoningCapability, persistedReasoningLevel ?? fallbackOpenAIThinkingLevel)
   const openAIThinkingLevel = normalizedReasoningLevel ?? (persistedReasoningLevel ?? fallbackOpenAIThinkingLevel)
 
-  // 检查 Agent 渠道列表中是否存在可用的模型（渠道 enabled + 模型 enabled）
-  const hasAvailableModel = React.useMemo(() => {
-    // Pi runtime 支持所有协议，任何已启用渠道都可用
-    if (sessionAgentRuntime === 'pi') {
-      return globalChannels.some((c) => c.enabled && c.models.some((m) => m.enabled))
-    }
-    // Claude runtime：需在 agentChannelIds 白名单中
-    if (!agentChannelIds || agentChannelIds.length === 0) return false
-    return globalChannels.some(
-      (c) => c.enabled && agentChannelIds.includes(c.id) && c.models.some((m) => m.enabled),
-    )
-  }, [globalChannels, agentChannelIds, sessionAgentRuntime])
+  // Pi runtime 支持所有协议，任何已启用渠道都可用。
+  const hasAvailableModel = React.useMemo(
+    () => globalChannels.some((c) => c.enabled && c.models.some((m) => m.enabled)),
+    [globalChannels],
+  )
   React.useEffect(() => {
     if (!agentChannelId || agentModelId) return
 
@@ -1241,7 +1108,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   // 等待 messagesLoaded 确保消息加载完成后再插入乐观消息，避免被加载结果覆盖。
   // 使用 queueMicrotask 延迟发送：避免 setState → 重渲染 → cleanup 取消 timer 的竞态。
   React.useEffect(() => {
-    if (!messagesLoaded) return
+    if (!messagesLoaded || isLegacyReadOnlySession) return
     if (!pendingPrompt) return
     if (pendingPrompt.sessionId !== sessionId) return
     if (!agentChannelId || streaming) return
@@ -1310,7 +1177,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         })
       })
     })
-  }, [messagesLoaded, pendingPrompt, sessionId, agentChannelId, agentModelId, sessionAgentRuntime, agentChannelProvider, currentWorkspaceId, streaming, setPendingPrompt, setStreamingStates, permissionMode, attachedDirs, attachedFileDirectories])
+  }, [messagesLoaded, pendingPrompt, sessionId, agentChannelId, agentModelId, sessionAgentRuntime, isLegacyReadOnlySession, agentChannelProvider, currentWorkspaceId, streaming, setPendingPrompt, setStreamingStates, permissionMode, attachedDirs, attachedFileDirectories])
   // ===== 附件处理 =====
 
   /** 为文件生成唯一文件名（避免粘贴多张图片时文件名重复导致覆盖） */
@@ -1946,61 +1813,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     }
   }, [sessionId, streaming, backgroundWaiting, setSessionChannelMap, setSessionModelMap, setDefaultChannelId, setDefaultModelId, setAgentSessions])
 
-  const handleAgentRuntimeChange = React.useCallback(async (runtime: AgentRuntime): Promise<void> => {
-    if (runtime === sessionAgentRuntime) {
-      requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-input-mode="agent"] .ProseMirror')?.focus())
-      return
-    }
-
-    const runtimeSwitchDeferred = streaming || backgroundWaiting
-    const previousDefaultRuntime = agentRuntime
-    const previousSessionMeta = sessionMeta
-    setAgentRuntime(runtime)
-    if (sessionMeta) {
-      setAgentSessions((prev) => prev.map((item) =>
-        item.id === sessionId
-          ? {
-            ...item,
-            agentRuntime: runtime,
-            sdkSessionId: undefined,
-            piSessionFile: undefined,
-            piEntryBindings: undefined,
-            updatedAt: Date.now(),
-          }
-          : item
-      ))
-    }
-
-    try {
-      const updated = await window.electronAPI.updateSessionAgentRuntime(sessionId, runtime)
-      setAgentSessions((prev) => prev.map((item) => item.id === sessionId ? updated : item))
-      window.electronAPI.updateSettings({ agentRuntime: runtime }).catch((error) => {
-        console.error('[AgentView] 保存 Agent Runtime 默认值失败:', error)
-      })
-      if (runtimeSwitchDeferred) {
-        toast.info('Agent 内核已切换，本轮结束后生效')
-      }
-    } catch (error) {
-      console.error('[AgentView] 切换 Agent Runtime 失败:', error)
-      setAgentRuntime(previousDefaultRuntime)
-      if (previousSessionMeta) {
-        setAgentSessions((prev) => prev.map((item) => item.id === sessionId ? previousSessionMeta : item))
-      }
-      toast.error('Agent Runtime 切换失败', { description: getErrorMessage(error) })
-    } finally {
-      requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-input-mode="agent"] .ProseMirror')?.focus())
-    }
-  }, [
-    agentRuntime,
-    backgroundWaiting,
-    sessionAgentRuntime,
-    sessionId,
-    sessionMeta,
-    setAgentRuntime,
-    setAgentSessions,
-    streaming,
-  ])
-
   const handleCodexFastModeChange = React.useCallback(async (): Promise<void> => {
     if (!isCodexFastModeAvailable || streaming || backgroundWaiting || !sessionMeta) return
 
@@ -2066,7 +1878,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     // 如果输入为空但有建议，使用建议内容
     const effectiveText = text || suggestion || ''
     const pendingFilesSnapshot = pendingFilesRef.current
-    if (!messagesLoaded || (!effectiveText && pendingFilesSnapshot.length === 0) || !agentChannelId || !hasAvailableModel) return
+    if (isLegacyReadOnlySession || !messagesLoaded || (!effectiveText && pendingFilesSnapshot.length === 0) || !agentChannelId || !hasAvailableModel) return
     if (!streaming && messagesRefreshingRef.current) {
       toast.info('上一轮消息正在同步', {
         description: '请稍等片刻再发送；队列会在同步完成后继续。',
@@ -2760,7 +2572,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   }, [togglePreviewPanel])
 
   const hasTextInput = inputContent.trim().length > 0
-  const canSend = messagesLoaded && (streaming || !messagesRefreshing) && (hasTextInput || pendingFiles.length > 0 || !!suggestion) && agentChannelId !== null && hasAvailableModel && (!streaming || hasTextInput)
+  const canSend = !isLegacyReadOnlySession && messagesLoaded && (streaming || !messagesRefreshing) && (hasTextInput || pendingFiles.length > 0 || !!suggestion) && agentChannelId !== null && hasAvailableModel && (!streaming || hasTextInput)
 
   const inputToolbarItems = React.useMemo<ToolbarItem[]>(() => [
     ...(isCodexFastModeAvailable ? [{
@@ -2917,15 +2729,10 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     <>
       <div className="flex min-w-0 items-center gap-1 [&_.model-selector-trigger>span]:max-w-[min(12rem,30vw)]">
         <ModelSelector
-          filterChannelIds={sessionAgentRuntime === 'pi' ? undefined : agentChannelIds}
           externalSelectedModel={externalSelectedModel}
           onModelSelect={handleModelSelect}
           showChannelInTrigger
           useSharedOpenState
-        />
-        <AgentRuntimeSelector
-          runtime={sessionAgentRuntime}
-          onChange={handleAgentRuntimeChange}
         />
       </div>
       {sendControl}
@@ -2965,27 +2772,33 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
           sessionPath={sessionPath}
           attachedDirs={allAttachedDirs}
           stoppedByUser={stoppedByUser}
-          onRetry={handleRetry}
-          onRetryInNewSession={handleRetryInNewSession}
-          onRelinkProjectRoot={handleRelinkProjectRoot}
-          onRestoreProjectRoot={() => setRestoreProjectRootDialogOpen(true)}
-          onFork={handleFork}
-          onRewind={handleRewindRequest}
-          onCompact={handleCompact}
+          onRetry={isLegacyReadOnlySession ? undefined : handleRetry}
+          onRetryInNewSession={isLegacyReadOnlySession ? undefined : handleRetryInNewSession}
+          onRelinkProjectRoot={isLegacyReadOnlySession ? undefined : handleRelinkProjectRoot}
+          onRestoreProjectRoot={isLegacyReadOnlySession ? undefined : () => setRestoreProjectRootDialogOpen(true)}
+          onFork={isLegacyReadOnlySession ? undefined : handleFork}
+          onRewind={isLegacyReadOnlySession ? undefined : handleRewindRequest}
+          onCompact={isLegacyReadOnlySession ? undefined : handleCompact}
         />
 
         {/* 权限请求横幅 */}
-        <PermissionBanner sessionId={sessionId} />
+        {!isLegacyReadOnlySession && <PermissionBanner sessionId={sessionId} />}
 
         {/* AskUserQuestion 交互式问答横幅 */}
-        <AskUserBanner sessionId={sessionId} />
+        {!isLegacyReadOnlySession && <AskUserBanner sessionId={sessionId} />}
 
 
         {/* ExitPlanMode 计划审批横幅 */}
-        <ExitPlanModeBanner sessionId={sessionId} />
+        {!isLegacyReadOnlySession && <ExitPlanModeBanner sessionId={sessionId} />}
 
-        {/* 输入区域 — 交互横幅显示时隐藏，由横幅替代 */}
-        {!hasBannerOverlay && (
+        {isLegacyReadOnlySession && (
+          <div className="mx-4 mb-4 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            这是使用已下线 Claude runtime 创建的历史会话，仅供只读查看。请新建 Pi Agent 会话继续工作。
+          </div>
+        )}
+
+        {/* 输入区域 — 交互横幅显示时隐藏；历史 Claude 会话仅供只读查看 */}
+        {!hasBannerOverlay && !isLegacyReadOnlySession && (
         <div className="px-2.5 pb-2.5 md:px-[18px] md:pb-[18px]" data-input-mode="agent">
           <div
             className={cn(

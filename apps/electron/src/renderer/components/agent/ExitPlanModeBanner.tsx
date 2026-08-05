@@ -1,10 +1,11 @@
 /**
  * ExitPlanModeBanner — Agent ExitPlanMode 计划审批横幅
  *
- * 仿照 Claude Code 的计划审批 UI，提供 3 个选项：
+ * 仿照 Claude Code 的计划审批 UI，提供 4 个选项：
  * 1. 批准并完全自动执行 — 切换到 bypassPermissions
- * 2. 拒绝计划 — deny
- * 3. 提供反馈 — 自由输入修改意见
+ * 2. 仅批准本次 — 保持 plan 模式，后续仍需审批
+ * 3. 拒绝计划 — deny
+ * 4. 提供反馈 — 自由输入修改意见
  *
  * 键盘：↑↓ 选择，Enter 确认，数字键快速选择。
  */
@@ -40,6 +41,13 @@ const PLAN_OPTIONS: PlanOption[] = [
     variant: 'default',
   },
   {
+    action: 'approve_once',
+    label: '仅批准本次',
+    description: '只批准当前计划，之后仍需逐个审批',
+    icon: <FileText className="size-3.5" />,
+    variant: 'default',
+  },
+  {
     action: 'deny',
     label: '拒绝计划',
     description: '直接拒绝，Agent 不会执行计划',
@@ -54,6 +62,9 @@ const PLAN_OPTIONS: PlanOption[] = [
     variant: 'secondary',
   },
 ]
+
+/** 定位 feedback 选项在数组中的索引（Escape 返回时聚焦） */
+const FEEDBACK_OPTION_INDEX = PLAN_OPTIONS.findIndex((o) => o.action === 'feedback')
 
 interface ExitPlanModeBannerProps {
   sessionId: string
@@ -150,7 +161,7 @@ export function ExitPlanModeBanner({ sessionId }: ExitPlanModeBannerProps): Reac
         if (e.key === 'Escape') {
           e.preventDefault()
           setShowFeedback(false)
-          setFocusedIdx(3)
+          setFocusedIdx(FEEDBACK_OPTION_INDEX)
         }
         return
       }
@@ -172,7 +183,7 @@ export function ExitPlanModeBanner({ sessionId }: ExitPlanModeBannerProps): Reac
             handleActionRef.current?.(option.action)
           }
         }
-      } else if (e.key >= '1' && e.key <= '3') {
+      } else if (e.key >= '1' && e.key <= String(PLAN_OPTIONS.length)) {
         const idx = parseInt(e.key) - 1
         const option = PLAN_OPTIONS[idx]
         if (option) {
@@ -297,7 +308,7 @@ export function ExitPlanModeBanner({ sessionId }: ExitPlanModeBannerProps): Reac
       {/* 底部提示 */}
       <div className="flex items-center px-4 pb-3">
         <span className="text-[10px] text-muted-foreground/68">
-          点击选择 · ↑↓ Enter 确认 · 1-3 快速选择
+          点击选择 · ↑↓ Enter 确认 · 1-{PLAN_OPTIONS.length} 快速选择
         </span>
       </div>
     </div>

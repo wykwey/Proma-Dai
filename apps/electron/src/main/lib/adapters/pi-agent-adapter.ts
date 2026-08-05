@@ -431,8 +431,8 @@ export function isPromptTooLongError(...messages: Array<string | undefined>): bo
   return PROMPT_TOO_LONG_PATTERNS.some((pattern) => text.includes(pattern))
 }
 
-export function isThinkingSignatureError(message: string, originalError?: string): boolean {
-  return matchesThinkingSignatureError(message, originalError)
+export function isThinkingSignatureError(...messages: Array<string | undefined>): boolean {
+  return matchesThinkingSignatureError(...messages)
 }
 
 function stringifyErrorContent(content: unknown): string | undefined {

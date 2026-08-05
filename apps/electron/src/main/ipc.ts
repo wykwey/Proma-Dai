@@ -2352,35 +2352,6 @@ export function registerIpcHandlers(): void {
     }
   )
 
-  ipcMain.handle(
-    AGENT_IPC_CHANNELS.UPDATE_SESSION_AGENT_RUNTIME,
-    async (_, sessionId: string, runtime: AgentRuntime): Promise<AgentSessionMeta> => {
-      if (!isAgentRuntime(runtime)) {
-        throw new Error(`无效的 Agent runtime: ${String(runtime)}`)
-      }
-      const current = getAgentSessionMeta(sessionId)
-      if (!current) {
-        throw new Error(`Agent 会话不存在: ${sessionId}`)
-      }
-
-      // 当前运行持有其启动时的 runtime；此处只更新会话的下一轮配置。
-
-      // 历史会话缺失 runtime 时按 Claude 处理，避免将 Claude SDK 会话 ID 交给 Pi 恢复。
-      const previousRuntime: AgentRuntime = isAgentRuntime(current.agentRuntime) ? current.agentRuntime : 'claude'
-      const updates: Partial<Pick<AgentSessionMeta, 'agentRuntime' | 'sdkSessionId' | 'piSessionFile' | 'piEntryBindings'>> = {
-        agentRuntime: runtime,
-      }
-      if (previousRuntime !== runtime) {
-        // 两套 runtime 的会话 artifact 不可互用；下一轮从 Proma 已持久化的转录恢复。
-        updates.sdkSessionId = undefined
-        updates.piSessionFile = undefined
-        updates.piEntryBindings = undefined
-      }
-
-      return updateAgentSessionMeta(sessionId, updates)
-    }
-  )
-
   // ===== AskUserQuestion 交互式问答 =====
 
   // 响应 AskUser 请求
@@ -3723,15 +3694,11 @@ export function registerIpcHandlers(): void {
     input: Partial<CreateAutomationInput | UpdateAutomationInput>,
     existing?: Automation,
   ): void => {
-    // 更新历史任务时，缺失的持久化 runtime 仍按 Claude 解释；仅新建任务使用 Pi 默认值。
-    const finalRuntime: AgentRuntime = input.agentRuntime ?? existing?.agentRuntime ?? (existing ? 'claude' : 'pi')
-    const finalChannelId = input.channelId !== undefined ? input.channelId : existing?.channelId
-    if (finalRuntime === 'claude' && finalChannelId) {
-      const agentChannelIds = getSettings().agentChannelIds ?? []
-      if (!agentChannelIds.includes(finalChannelId)) {
-        throw new Error('Claude Agent 内核只能使用已启用的 Agent 兼容渠道')
-      }
+    if (input.agentRuntime !== undefined && input.agentRuntime !== 'pi') {
+      throw new Error(`不再支持的 Agent runtime: ${String(input.agentRuntime)}；仅支持 pi`)
     }
+    // 历史任务的 runtime 字段只用于读取兼容；下一次执行由调度器统一迁移到 Pi。
+    void existing
   }
 
   const validateAutomationScheduleComplete = (

@@ -1363,7 +1363,13 @@ export interface ExitPlanModeRequest {
 }
 
 /** ExitPlanMode 用户选择行为 */
-export type ExitPlanModeAction = 'approve_bypass' | 'deny' | 'feedback'
+/**
+ * - approve_bypass：批准计划并切换为完全自动模式，后续工具自动允许
+ * - approve_once：仅批准本次计划，保持 plan 模式，后续写操作仍需审批
+ * - deny：拒绝计划
+ * - feedback：拒绝并附修改意见
+ */
+export type ExitPlanModeAction = 'approve_bypass' | 'approve_once' | 'deny' | 'feedback'
 
 /** ExitPlanMode 响应（渲染进程 → 主进程） */
 export interface ExitPlanModeResponse {
@@ -1686,8 +1692,6 @@ export const AGENT_IPC_CHANNELS = {
   PERMISSION_RESPOND: 'agent:permission:respond',
   /** 热切换指定会话的权限模式（运行中生效，不广播到其他会话） */
   UPDATE_SESSION_PERMISSION_MODE: 'agent:update-session-permission-mode',
-  /** 切换指定会话的 Agent runtime（下一轮生效，跨 runtime 时清空 SDK resume ID） */
-  UPDATE_SESSION_AGENT_RUNTIME: 'agent:update-session-agent-runtime',
   /** 切换指定会话的 ChatGPT Codex Fast Mode（下一轮 Pi 请求生效） */
   UPDATE_SESSION_CODEX_FAST_MODE: 'agent:update-session-codex-fast-mode',
   /** 查询 Pi catalog 或专属 profile 支持的会话级推理档位 */

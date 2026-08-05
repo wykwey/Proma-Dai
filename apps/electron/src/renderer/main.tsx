@@ -24,7 +24,6 @@ import {
 import {
   agentChannelIdAtom,
   agentModelIdAtom,
-  agentChannelIdsAtom,
   agentRuntimeAtom,
   agentWorkspacesAtom,
   agentSessionsAtom,
@@ -74,7 +73,6 @@ import type { WorkspaceCapabilities } from '@proma/shared'
 import { showCapabilityChangeToasts } from './lib/capabilities-toast'
 import { GlobalShortcuts } from './components/shortcuts/GlobalShortcuts'
 import { TabSwitcher } from './components/tabs/TabSwitcher'
-import { getEnabledClaudeAgentChannelIds } from './lib/agent-channel-selection'
 import { PromaLogo } from './lib/model-logo'
 import './styles/globals.css'
 import 'katex/dist/katex.min.css'
@@ -153,7 +151,6 @@ function ThemeInitializer(): null {
 function AgentSettingsInitializer(): null {
   const setAgentChannelId = useSetAtom(agentChannelIdAtom)
   const setAgentModelId = useSetAtom(agentModelIdAtom)
-  const setAgentChannelIds = useSetAtom(agentChannelIdsAtom)
   const setAgentRuntime = useSetAtom(agentRuntimeAtom)
   const setAgentWorkspaces = useSetAtom(agentWorkspacesAtom)
   const setCurrentWorkspaceId = useSetAtom(currentAgentWorkspaceIdAtom)
@@ -198,27 +195,18 @@ function AgentSettingsInitializer(): null {
         store.set(selectedModelAtom, null)
       }
 
-      const defaultAgentRuntime = settings.agentRuntime ?? 'pi'
-      setAgentRuntime(defaultAgentRuntime)
-
-      // 渠道的启用状态是唯一开关：启动时也必须从实际渠道派生 Claude 白名单，
-      // 不能继承旧版独立开关，或把 Pi 专用渠道带入 Claude runtime。
-      const claudeChannelIds = getEnabledClaudeAgentChannelIds(channels)
-      setAgentChannelIds(claudeChannelIds)
+      // 新 Agent 执行统一使用 Pi；旧 Claude 会话的 runtime 只从各自元数据读取并只读展示。
+      setAgentRuntime('pi')
 
       const selectedChannel = settings.agentChannelId
         ? channels.find((channel) => channel.id === settings.agentChannelId)
         : undefined
       const selectedChannelIsUsable = selectedChannel?.enabled
-        && (defaultAgentRuntime === 'pi' || claudeChannelIds.includes(selectedChannel.id))
 
       const updates: Parameters<typeof window.electronAPI.updateSettings>[0] = {}
-      const storedClaudeChannelIds = settings.agentChannelIds ?? []
-      const whitelistChanged = claudeChannelIds.length !== storedClaudeChannelIds.length
-        || claudeChannelIds.some((id, index) => id !== storedClaudeChannelIds[index])
-      if (whitelistChanged) updates.agentChannelIds = claudeChannelIds
+      if (settings.agentRuntime !== 'pi') updates.agentRuntime = 'pi'
 
-      // 验证并加载 Agent 默认渠道/模型。Claude runtime 不能恢复到 Pi 专用或已禁用渠道。
+      // 验证并加载 Agent 默认渠道/模型。Pi 支持任意已启用渠道。
       if (settings.agentChannelId && selectedChannelIsUsable) {
         setAgentChannelId(settings.agentChannelId)
         if (settings.agentModelId) setAgentModelId(settings.agentModelId)
@@ -269,7 +257,7 @@ function AgentSettingsInitializer(): null {
       console.error(err)
       setAgentSettingsReady(true) // 即使出错也标记就绪，避免永远阻塞
     })
-  }, [setAgentChannelId, setAgentModelId, setAgentChannelIds, setAgentRuntime, setAgentWorkspaces, setCurrentWorkspaceId, setThinking, setEffort, setMaxBudget, setMaxTurns, setAutomationGroupOrder, setChannels, setChannelsLoaded, setAgentSettingsReady])
+  }, [setAgentChannelId, setAgentModelId, setAgentRuntime, setAgentWorkspaces, setCurrentWorkspaceId, setThinking, setEffort, setMaxBudget, setMaxTurns, setAutomationGroupOrder, setChannels, setChannelsLoaded, setAgentSettingsReady])
 
   // 工作区切换时重置能力缓存，预加载基线
   useEffect(() => {

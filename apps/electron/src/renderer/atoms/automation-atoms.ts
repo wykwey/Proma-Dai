@@ -92,7 +92,7 @@ export function automationToDraft(a: Automation): AutomationDraft {
     dayOfMonth: a.dayOfMonth,
     scheduledAt: a.scheduledAt,
     maxRuns: a.maxRuns,
-    agentRuntime: a.agentRuntime ?? 'claude',
+    agentRuntime: a.agentRuntime ?? 'pi',
     channelId: a.channelId,
     modelId: a.modelId,
     workspaceId: a.workspaceId,

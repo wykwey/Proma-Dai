@@ -25,18 +25,10 @@ import {
 import {
   getAgentWorkspace,
   getProjectFilesPath,
-  getWorkspaceAutoMemoryDir,
   listAgentWorkspaces,
 } from './agent-workspace-manager'
 import { resolvePiThinkingLevel } from './agent-thinking-level'
 import { getSettings } from './settings-service'
-import { removePromaAutoCompactSettings } from './agent-auto-compact-settings'
-
-// 在模块加载时一次性设置 SDK 配置目录，避免在 forkSession 等异步调用中临时修改/恢复
-// process.env 导致的并发安全问题（异步操作的 await 间隙其他代码可能读到错误值）
-if (!process.env.CLAUDE_CONFIG_DIR) {
-  process.env.CLAUDE_CONFIG_DIR = getSdkConfigDir()
-}
 import type {
   AgentSessionMeta,
   AgentMessage,
@@ -254,58 +246,6 @@ export function resolveAgentWorkbenchDir(
 }
 
 /**
- * 确保 Claude runtime 的 Proma 会话 sidecar 配置存在。
- *
- * Claude 不能依赖 project settings source；此文件会由 adapter 通过 SDK `settings` 选项显式加载。
- * 新会话的计划目录相对于项目根设置，历史会话保留原先相对于私有 workbench 的 `.context` 语义。
- */
-export function ensureClaudeSessionSettings(workspaceId: string, sessionId: string): string | undefined {
-  const workspace = getAgentWorkspace(workspaceId)
-  if (!workspace) return undefined
-
-  const sessionDir = getAgentSessionWorkspacePath(workspace.slug, sessionId)
-  const sessionMeta = getAgentSessionMeta(sessionId)
-  const agentCwdMode = getAgentCwdMode(sessionMeta)
-  const claudeDir = join(sessionDir, '.claude')
-  if (!existsSync(claudeDir)) mkdirSync(claudeDir, { recursive: true })
-
-  const settingsPath = join(claudeDir, 'settings.json')
-  let sdkSettings: Record<string, unknown> = {}
-  try {
-    sdkSettings = JSON.parse(readFileSync(settingsPath, 'utf-8'))
-  } catch { /* 文件不存在或解析失败 */ }
-
-  let needsWrite = false
-  const privatePlansDir = join(sessionDir, '.context', 'plan')
-  if (!existsSync(privatePlansDir)) mkdirSync(privatePlansDir, { recursive: true })
-  const agentCwd = resolveAgentCwd(workspace, sessionId, agentCwdMode) ?? sessionDir
-  const plansDirectory = agentCwdMode === 'project'
-    ? relative(agentCwd, privatePlansDir) || '.'
-    : '.context'
-  if (sdkSettings.plansDirectory !== plansDirectory) {
-    sdkSettings.plansDirectory = plansDirectory
-    needsWrite = true
-  }
-  if (sdkSettings.skipWebFetchPreflight !== true) {
-    sdkSettings.skipWebFetchPreflight = true
-    needsWrite = true
-  }
-  const autoMemoryDirectory = getWorkspaceAutoMemoryDir(workspace.slug)
-  if (sdkSettings.autoMemoryDirectory !== autoMemoryDirectory) {
-    sdkSettings.autoMemoryDirectory = autoMemoryDirectory
-    needsWrite = true
-  }
-  if (removePromaAutoCompactSettings(sdkSettings)) {
-    needsWrite = true
-  }
-  if (needsWrite) {
-    writeFileSync(settingsPath, JSON.stringify(sdkSettings, null, 2))
-  }
-
-  return settingsPath
-}
-
-/**
  * 创建新会话
  */
 export function createAgentSession(
@@ -313,7 +253,7 @@ export function createAgentSession(
   channelId?: string,
   workspaceId?: string,
   modelId?: string,
-  agentRuntime: AgentRuntime = 'pi',
+  _legacyAgentRuntime: AgentRuntime = 'pi',
   agentCwdMode?: AgentCwdMode,
 ): AgentSessionMeta {
   const index = readIndex()
@@ -329,7 +269,8 @@ export function createAgentSession(
     modelId,
     workspaceId,
     agentCwdMode: workspaceId ? agentCwdMode ?? 'project' : undefined,
-    agentRuntime,
+    // Claude runtime 已停止支持；即使旧调用方仍传入 legacy 值，新会话也只写入 Pi。
+    agentRuntime: 'pi',
     // 新会话继承已持久化的全局思考偏好，之后仍可按会话单独调整。
     reasoningLevel: defaultThinkingLevel,
     createdAt: now,
@@ -347,11 +288,6 @@ export function createAgentSession(
     const ws = getAgentWorkspace(workspaceId)
     if (ws) {
       const sessionDir = getAgentSessionWorkspacePath(ws.slug, meta.id)
-
-      // 仅 Claude runtime 需要此 SDK 配置；本地项目同样放在 Proma sidecar，避免污染用户项目根目录。
-      if (agentRuntime === 'claude') {
-        ensureClaudeSessionSettings(workspaceId, meta.id)
-      }
 
       // .context 是 Proma 的会话工作台，本地项目同样需要。
       const contextDir = join(sessionDir, '.context')
@@ -783,182 +719,25 @@ export function migrateChatToAgentSession(conversationId: string, agentSessionId
 }
 
 /**
- * 分叉 Agent 会话（SDK 原生 fork）
+ * 分叉 Pi Agent 会话。
  *
- * 直接调用 SDK 的 forkSession() 独立函数完成 JSONL 复制和 UUID 重映射，
- * 新会话立即获得 sdkSessionId，无需延迟到首次发消息。
- *
- * forkSourceDir 记录源会话的工作目录，仅作为元数据参考保留。
- * SDK session JSONL 已在 fork 创建时复制到新会话的 project-hash 目录下，
- * orchestrator 无需在运行时切换 cwd。
- *
- * process.env.CLAUDE_CONFIG_DIR 已在模块加载时设置，无需在此处临时修改。
+ * 使用 Pi SessionManager 的树状分支能力复制历史并建立新的 Pi session artifact。
+ * 历史 Claude 会话只读保留，不支持分叉执行。
  *
  * @returns 新创建的会话元数据
  */
 export async function forkAgentSession(input: ForkSessionInput): Promise<AgentSessionMeta> {
-  const { sessionId, upToMessageUuid } = input
-
-  // 1. 获取源会话元数据
-  const sourceMeta = getAgentSessionMeta(sessionId)
+  const sourceMeta = getAgentSessionMeta(input.sessionId)
   if (!sourceMeta) {
-    throw new Error(`源 Agent 会话不存在: ${sessionId}`)
+    throw new Error(`源 Agent 会话不存在: ${input.sessionId}`)
   }
-
+  if (sourceMeta.agentRuntime !== 'pi') {
+    throw new Error('历史 Claude Agent 会话不再支持分叉；请新建 Pi Agent 会话后继续')
+  }
   if (!sourceMeta.sdkSessionId) {
-    throw new Error('该会话没有 SDK session，无法分叉')
+    throw new Error('该会话没有 Pi session，无法分叉')
   }
-
-  if (sourceMeta.agentRuntime === 'pi') {
-    return forkPiAgentSession(sourceMeta, input)
-  }
-
-  const forkModelId = input.modelId !== undefined
-    ? assertEnabledModelForChannel({
-        channelId: sourceMeta.channelId,
-        modelId: input.modelId,
-        purpose: '分叉 Agent 会话',
-      })
-    : sourceMeta.modelId
-
-  // 2. 确定源会话的 Agent cwd。fork 必须继承源会话的持久化 cwd 语义。
-  // sidecar 工作台单独解析，fork 时仍需复制其中的 .context 等会话临时文件。
-  const workspace = sourceMeta.workspaceId ? getAgentWorkspace(sourceMeta.workspaceId) : undefined
-  const sourceCwdMode = getAgentCwdMode(sourceMeta)
-  const sourceDir = resolveAgentCwd(workspace, sessionId, sourceCwdMode)
-  const sourceWorkbenchDir = resolveAgentWorkbenchDir(workspace, sessionId)
-
-  // 2.5 校验目标消息并确定其所属的 SDK session ID
-  // - 当会话经历过 "session not found" 恢复后，sdkSessionId 会被替换为新的，
-  //   但旧消息仍保留在 Proma JSONL 中，其 session_id 指向旧的 SDK session。
-  // - 若目标消息是 sub-agent 输出（parent_tool_use_id 非空），SDK forkSession
-  //   会过滤掉 sidechain 后再查 upToMessageId，必然报 "not found"，
-  //   这里自动回溯到最近的主线 assistant uuid。
-  let forkSourceSdkSessionId = sourceMeta.sdkSessionId
-  let effectiveUpToMessageUuid = upToMessageUuid
-  if (upToMessageUuid) {
-    const forkTarget = await resolveForkTargetFromStoredMessages(sessionId, upToMessageUuid)
-    effectiveUpToMessageUuid = forkTarget.effectiveUpToMessageUuid
-
-    if (forkTarget.usedSidechainFallback) {
-      console.log(
-        `[Agent 会话] fork 目标消息 ${upToMessageUuid} 属于 sub-agent，自动回溯到主线消息 ${effectiveUpToMessageUuid}`,
-      )
-    }
-
-    if (forkTarget.effectiveSdkSessionId && forkTarget.effectiveSdkSessionId !== sourceMeta.sdkSessionId) {
-      console.log(
-        `[Agent 会话] fork 目标消息属于旧 SDK session ${forkTarget.effectiveSdkSessionId}（当前为 ${sourceMeta.sdkSessionId}），使用消息所属 session 进行 fork`,
-      )
-      forkSourceSdkSessionId = forkTarget.effectiveSdkSessionId
-    }
-  }
-
-  // 3. 调用 SDK 原生 forkSession
-  // process.env.CLAUDE_CONFIG_DIR 已在模块加载时设置，SDK 会自动读取
-  const sdk = await import('@anthropic-ai/claude-agent-sdk')
-  let forkResult: Awaited<ReturnType<typeof sdk.forkSession>>
-  try {
-    forkResult = await sdk.forkSession(forkSourceSdkSessionId, {
-      upToMessageId: effectiveUpToMessageUuid,
-      dir: sourceDir,
-    })
-  } catch (err) {
-    // 指定 dir 失败时，让 SDK 自动搜索所有项目目录
-    if (sourceDir) {
-      console.warn(`[Agent 会话] forkSession 指定 dir 失败，改用全局搜索:`, err)
-      forkResult = await sdk.forkSession(forkSourceSdkSessionId, {
-        upToMessageId: effectiveUpToMessageUuid,
-      })
-    } else {
-      throw err
-    }
-  }
-
-  // 4. 创建 Proma 新会话，立即设置 sdkSessionId
-  const forkTitle = `${sourceMeta.title} (fork)`
-  const newMeta = createAgentSession(
-    forkTitle,
-    sourceMeta.channelId,
-    sourceMeta.workspaceId,
-    forkModelId,
-    'claude',
-    sourceCwdMode,
-  )
-
-  updateAgentSessionMeta(newMeta.id, {
-    sdkSessionId: forkResult.sessionId,
-    forkSourceDir: sourceDir,
-    forkSourceSdkSessionId: forkSourceSdkSessionId,
-  })
-  // 同步返回值（updateAgentSessionMeta 已写入磁盘，这里让调用方拿到最新值）
-  newMeta.sdkSessionId = forkResult.sessionId
-  newMeta.forkSourceDir = sourceDir
-  newMeta.forkSourceSdkSessionId = forkSourceSdkSessionId
-
-  // 4.4 计算 fork 目标的 Agent cwd 与 sidecar 工作台目录。
-  const destDir = resolveAgentCwd(workspace, newMeta.id, newMeta.agentCwdMode)
-  const destWorkbenchDir = resolveAgentWorkbenchDir(workspace, newMeta.id)
-
-  // 4.5 仅在源、目标 cwd 不同的历史会话 fork 场景中复制 SDK session JSONL。
-  // SDK forkSession() 在源 cwd 的 project-hash 下创建 JSONL（如 projects/<hash-of-sourceDir>/<newId>.jsonl），
-  // 但历史会话的 fork cwd 可能不同，resume 时 SDK 会找不到。
-  // 这里直接将 JSONL 复制到 fork 目标 cwd 的 project-hash 下，让后续每轮 resume 都能直接命中。
-  // 同时把 JSONL 内容中所有源目录路径改写为目标目录路径，避免历史中的绝对路径误导 Claude
-  // 继续在源目录下读写文件。
-  // 统一项目根后的新会话两端 cwd 相同，forkSession 已经在正确的共享 project-hash 中创建文件，
-  // 不能再次复制到同一路径，否则会在读源文件前将其截断。
-  if (sourceDir && destDir && sourceDir !== destDir) {
-    const sourceJsonl = findSdkSessionJsonl(forkResult.sessionId)
-    if (sourceJsonl) {
-      // SDK 使用简单的字符替换计算 project-hash：path.replace(/[^a-zA-Z0-9]/g, '-')
-      const destProjectHash = destDir.replace(/[^a-zA-Z0-9]/g, '-')
-      const sdkProjectsDir = join(getSdkConfigDir(), 'projects', destProjectHash)
-      if (!existsSync(sdkProjectsDir)) mkdirSync(sdkProjectsDir, { recursive: true })
-      const destJsonl = join(sdkProjectsDir, `${forkResult.sessionId}.jsonl`)
-      try {
-        const copiedLines = await copyTextFileWithPathRewrite(sourceJsonl, destJsonl, sourceDir, destDir)
-        console.log(`[Agent 会话] 已将 SDK session JSONL 复制到 fork 目标目录并改写路径: ${destJsonl} (${copiedLines} 行)`)
-      } catch (err) {
-        console.warn(`[Agent 会话] 复制 SDK session JSONL 失败，fork 后首轮可能触发上下文回填:`, err)
-      }
-    } else {
-      console.warn(`[Agent 会话] 未找到 SDK session JSONL (${forkResult.sessionId})，fork 后首轮可能触发上下文回填`)
-    }
-  }
-
-  // 5. 复制源会话 sidecar 工作台文件到新会话目录；绝不复制本地项目根。
-  // 保留 .context/，但跳过依赖、构建产物和 Git 元数据，避免 fork 点击时同步复制巨量目录拖垮主进程。
-  // .context/ 必须保留 — Proma 约定 .context/note.md、todo.md、plan/ 等是会话上下文，
-  // 如果不复制，fork 后这些参考资料会丢失或被 Claude 误回源目录读取。
-  if (sourceWorkbenchDir && destWorkbenchDir) {
-    try {
-      const copyResult = copyForkWorkspaceFiles(sourceWorkbenchDir, destWorkbenchDir)
-      console.log(
-        `[Agent 会话] 已复制工作台文件: ${sourceWorkbenchDir} → ${destWorkbenchDir} `
-        + `(${copyResult.copiedCount} 个条目, 跳过 ${copyResult.skippedCount} 个, 失败 ${copyResult.failedCount} 个)`,
-      )
-    } catch (err) {
-      console.warn(`[Agent 会话] 复制工作台文件失败:`, err)
-    }
-  }
-
-  // 6. 复制截断后的 SDKMessages 到新会话的 JSONL（用于 UI 展示历史）
-  // 同时改写消息中所有源目录绝对路径为目标目录路径 — 否则 Claude 在历史里看到的所有
-  // Read/Edit/Bash 工具调用都指向源会话目录，会继续在源目录而非新 cwd 下操作文件。
-  //
-  // 注意：UI 截断点用原始 upToMessageUuid，保留用户实际看到的所有内容（包括 sub-agent
-  // 过程消息），与 SDK forkSession 用 effectiveUpToMessageUuid（主线 uuid）解耦。
-  const copiedMessages = await copyForkStoredSDKMessages({
-    sourceSessionId: sessionId,
-    destSessionId: newMeta.id,
-    upToMessageUuid,
-    sourceDir,
-    destDir,
-  })
-
-  console.log(`[Agent 会话] 分叉会话已创建（SDK 原生 fork）: ${sourceMeta.title} → ${forkTitle} (${copiedMessages} 条消息, sdkSessionId=${forkResult.sessionId})`)
-  return newMeta
+  return forkPiAgentSession(sourceMeta, input)
 }
 
 /**

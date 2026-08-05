@@ -1,8 +1,7 @@
 /**
  * Pi Runtime 内置 MCP 工具桥接层
  *
- * Claude SDK 用 sdk.createSdkMcpServer() + Zod schema 注册 MCP 工具；
- * Pi SDK 用 sdk.defineTool() + TypeBox schema 注册 customTools。
+ * Pi SDK 用 sdk.defineTool() + TypeBox schema 注册 Proma 内置 custom tools。
  *
  * 本模块复用底层 service 函数（automation-manager、collaboration 等），
  * 用 Pi ToolDefinition 格式暴露相同的业务能力，避免 Pi runtime 下这些工具缺失。
@@ -80,7 +79,7 @@ function summarizeAutomation(a: import('@proma/shared').Automation, includeHisto
     scheduledAt: a.scheduledAt,
     maxRuns: a.maxRuns,
     runCount: a.runCount ?? 0,
-    agentRuntime: a.agentRuntime ?? 'claude',
+    agentRuntime: 'pi',
     completedAt: a.completedAt,
     sessionMode: a.sessionMode,
     workspaceId: a.workspaceId,
@@ -137,7 +136,7 @@ function validateScheduleFields(input: Partial<CreateAutomationInput | UpdateAut
   if (input.maxRuns !== undefined && (!isFiniteInt(input.maxRuns) || input.maxRuns < 1)) {
     throw new Error(`非法的 maxRuns: ${String(input.maxRuns)}（应为 ≥1 的整数）`)
   }
-  if (input.agentRuntime !== undefined && input.agentRuntime !== 'claude' && input.agentRuntime !== 'pi') {
+  if (input.agentRuntime !== undefined && input.agentRuntime !== 'pi') {
     throw new Error(`非法的 agentRuntime: ${String(input.agentRuntime)}`)
   }
   if (input.sessionMode !== undefined && input.sessionMode !== 'daily' && input.sessionMode !== 'reuse') {
@@ -200,7 +199,7 @@ function buildAutomationTools(sdk: PiSdk, ctx: PiBuiltinToolsContext): ToolDefin
         scheduledAt: Type.Optional(Type.Number({ description: '一次性任务的绝对触发时间（毫秒时间戳）；scheduleType=once 时必填' })),
         maxRuns: Type.Optional(Type.Number({ description: '最大运行次数上限；达到后任务自动停用' })),
         active: Type.Optional(Type.Boolean({ description: '创建后是否启用，默认 true' })),
-        agentRuntime: Type.Optional(Type.Union([Type.Literal('claude'), Type.Literal('pi')], { description: '运行该任务的 Agent runtime；不传则继承当前会话 runtime' })),
+        agentRuntime: Type.Optional(Type.Literal('pi', { description: '运行该任务的 Agent runtime；仅支持 pi' })),
         sessionMode: Type.Optional(Type.Union([Type.Literal('daily'), Type.Literal('reuse')], { description: '会话模式' })),
       }),
       async execute(_toolCallId: string, params: unknown) {
@@ -218,7 +217,7 @@ function buildAutomationTools(sdk: PiSdk, ctx: PiBuiltinToolsContext): ToolDefin
           dayOfMonth: args.dayOfMonth as number | undefined,
           scheduledAt: args.scheduledAt as number | undefined,
           maxRuns: args.maxRuns as number | undefined,
-          agentRuntime: (args.agentRuntime as AgentRuntime | undefined) ?? ctx.agentRuntime,
+          agentRuntime: 'pi',
           channelId: ctx.channelId,
           modelId: ctx.modelId,
           workspaceId: ctx.workspaceId,
@@ -269,7 +268,7 @@ function buildAutomationTools(sdk: PiSdk, ctx: PiBuiltinToolsContext): ToolDefin
         scheduledAt: Type.Optional(Type.Number({ description: '新的一次性触发时间（毫秒时间戳）' })),
         maxRuns: Type.Optional(Type.Number({ description: '新的最大运行次数上限' })),
         active: Type.Optional(Type.Boolean({ description: '启用或暂停任务' })),
-        agentRuntime: Type.Optional(Type.Union([Type.Literal('claude'), Type.Literal('pi')], { description: '新的 Agent runtime' })),
+        agentRuntime: Type.Optional(Type.Literal('pi', { description: '新的 Agent runtime；仅支持 pi' })),
         sessionMode: Type.Optional(Type.Union([Type.Literal('daily'), Type.Literal('reuse')])),
       }),
       async execute(_toolCallId: string, params: unknown) {
@@ -288,7 +287,7 @@ function buildAutomationTools(sdk: PiSdk, ctx: PiBuiltinToolsContext): ToolDefin
           scheduledAt: args.scheduledAt as number | undefined,
           maxRuns: args.maxRuns as number | undefined,
           active: args.active as boolean | undefined,
-          agentRuntime: args.agentRuntime as AgentRuntime | undefined,
+          agentRuntime: args.agentRuntime ? 'pi' : undefined,
           sessionMode: args.sessionMode as 'daily' | 'reuse' | undefined,
         }
         if (input.name !== undefined) assertNonBlank(input.name, 'name')
