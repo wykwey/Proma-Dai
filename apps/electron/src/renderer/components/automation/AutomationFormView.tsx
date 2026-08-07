@@ -104,7 +104,6 @@ function getDraftSignature(draft: AutomationDraft): string {
     dayOfMonth: draft.dayOfMonth ?? '',
     scheduledAt: draft.scheduledAt ?? '',
     maxRuns: draft.maxRuns ?? '',
-    agentRuntime: draft.agentRuntime,
     channelId: draft.channelId,
     modelId: draft.modelId ?? '',
     workspaceId: draft.workspaceId ?? '',
@@ -125,7 +124,6 @@ function draftToCreateInput(draft: AutomationDraft): CreateAutomationInput {
     dayOfMonth: draft.dayOfMonth,
     scheduledAt: draft.scheduledAt,
     maxRuns: draft.maxRuns,
-    agentRuntime: draft.agentRuntime,
     channelId: draft.channelId,
     modelId: draft.modelId,
     workspaceId: draft.workspaceId,
@@ -148,7 +146,6 @@ function draftToUpdateInput(draft: AutomationDraft): UpdateAutomationInput {
     dayOfMonth: draft.dayOfMonth,
     scheduledAt: draft.scheduledAt,
     maxRuns: draft.maxRuns,
-    agentRuntime: draft.agentRuntime,
     channelId: draft.channelId,
     modelId: draft.modelId,
     workspaceId: draft.workspaceId ?? '',
@@ -156,14 +153,6 @@ function draftToUpdateInput(draft: AutomationDraft): UpdateAutomationInput {
     sessionMode: draft.sessionMode,
     active: draft.active,
   }
-}
-
-function coerceAutomationDraftRuntime(draft: AutomationDraft): AutomationDraft {
-  if (draft.agentRuntime === 'pi') return draft
-
-  // Claude runtime 已下线：保留历史任务数据，但打开编辑时强制迁移到 Pi 并先停用，
-  // 避免用户仅查看旧任务就让它在新 runtime 上未经确认继续运行。
-  return { ...draft, agentRuntime: 'pi', active: false }
 }
 
 function AutomationPromptEmptyGuide(): React.ReactElement {
@@ -271,7 +260,7 @@ export function AutomationFormView({ standalone = false }: { standalone?: boolea
 
   React.useEffect(() => {
     if (formState.open && formState.draft) {
-      const draft = coerceAutomationDraftRuntime(formState.draft)
+      const draft = formState.draft
       setForm(draft)
       lastSavedSignatureRef.current = draft.id && canPersistDraft(draft)
         ? getDraftSignature(draft)
@@ -864,16 +853,6 @@ export function AutomationFormView({ standalone = false }: { standalone?: boolea
               </span>
             </div>
           )}
-
-          <div className="flex flex-col gap-2">
-            <Label>Agent 内核</Label>
-            <div className="flex h-9 items-center rounded-md border border-input bg-muted/30 px-3 text-sm font-medium">
-              Pi
-            </div>
-            <span className="pl-2.5 text-xs text-muted-foreground leading-relaxed">
-              自动任务统一使用 Pi Agent SDK。
-            </span>
-          </div>
 
           <div className="flex flex-col gap-2">
             <Label>选择模型</Label>

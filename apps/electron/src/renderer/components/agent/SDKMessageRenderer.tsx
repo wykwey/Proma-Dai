@@ -79,7 +79,7 @@ import type {
 import type { AgentPendingFile } from '@proma/shared'
 import {
   getSDKCompactStatus,
-  inferAgentSdkContextWindow,
+  inferProviderContextWindow,
   inferContextWindow,
   THINKING_SIGNATURE_ERROR_CODE,
   THINKING_SIGNATURE_ERROR_TITLE,
@@ -216,7 +216,7 @@ function extractTurnUsage(turnMessages: SDKMessage[]): { durationMs?: number; us
       for (const [modelId, info] of Object.entries(resultMsg.modelUsage)) {
         const fallbackModelId = resultMsg._channelModelId ?? modelId
         const fallbackWindow = resultMsg._channelProvider
-          ? inferAgentSdkContextWindow(fallbackModelId, resultMsg._channelProvider)
+          ? inferProviderContextWindow(fallbackModelId, resultMsg._channelProvider)
           : inferContextWindow(fallbackModelId)
         const candidate = Math.max(info?.contextWindow ?? 0, fallbackWindow ?? 0) || undefined
         if (candidate && (contextWindow === undefined || candidate > contextWindow)) {
@@ -225,7 +225,7 @@ function extractTurnUsage(turnMessages: SDKMessage[]): { durationMs?: number; us
       }
     } else {
       contextWindow = resultMsg._channelProvider
-        ? inferAgentSdkContextWindow(resultMsg._channelModelId, resultMsg._channelProvider)
+        ? inferProviderContextWindow(resultMsg._channelModelId, resultMsg._channelProvider)
         : inferContextWindow(resultMsg._channelModelId)
     }
     return {

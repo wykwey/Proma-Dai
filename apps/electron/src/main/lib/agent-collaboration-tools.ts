@@ -10,7 +10,6 @@ import type {
   AgentDelegationRole,
   AgentDelegationStatus,
   AgentMessage,
-  AgentRuntime,
   AgentSessionMeta,
   AgentStreamPayload,
   AskUserRequest,
@@ -45,7 +44,6 @@ interface CollaborationToolContext {
   modelId?: string
   workspaceId?: string
   permissionMode?: PromaPermissionMode
-  agentRuntime?: AgentRuntime
   triggeredBy?: 'user' | 'automation' | 'delegation'
 }
 
@@ -635,7 +633,6 @@ function startDelegation(
   const permissionMode = resolveDelegationPermissionMode(
     parentPermissionMode,
     args.permissionMode,
-    ctx.agentRuntime ?? parent?.agentRuntime,
   )
   const effectiveModelId = args.modelId !== undefined
     ? assertEnabledModelForChannel({
@@ -647,7 +644,7 @@ function startDelegation(
 
   const { completion, resolveCompletion } = createDelegationCompletion()
 
-  const child = createAgentSession(title, ctx.channelId, ctx.workspaceId, effectiveModelId, 'pi')
+  const child = createAgentSession(title, ctx.channelId, ctx.workspaceId, effectiveModelId)
   const rootSessionId = parent?.rootSessionId ?? parent?.id ?? ctx.sessionId
   updateAgentSessionMeta(child.id, {
     parentSessionId: ctx.sessionId,

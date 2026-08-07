@@ -18,7 +18,7 @@ import { randomUUID } from 'node:crypto'
 import { homedir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { accessSync, constants, existsSync, mkdirSync, realpathSync } from 'node:fs'
-import type { AgentRuntime, AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, AgentSessionMeta, CodexOAuthCredentials, XaiOAuthCredentials, TypedError, RetryAttempt, SDKMessage, SDKAssistantMessage, AgentStreamPayload, RewindSessionResult } from '@proma/shared'
+import type { AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, AgentSessionMeta, CodexOAuthCredentials, XaiOAuthCredentials, TypedError, RetryAttempt, SDKMessage, SDKAssistantMessage, AgentStreamPayload, RewindSessionResult } from '@proma/shared'
 import {
   PROMA_DEFAULT_PERMISSION_MODE,
   PROMA_PERMISSION_MODE_CONFIG,
@@ -28,7 +28,7 @@ import {
   isPersistableSDKSystemMessage,
   normalizePathForCompare,
   normalizeMcpTransportType,
-  inferAgentSdkContextWindow,
+  inferProviderContextWindow,
   inferReasoningTransport,
   resolveReasoningProfile,
 } from '@proma/shared'
@@ -42,7 +42,7 @@ import { decryptApiKey, getChannelById, listChannels, persistCodexOAuthCredentia
 import { getAdapter, fetchTitle } from '@proma/core'
 import { getFetchFn } from './proxy-fetch'
 import { getEffectiveProxyUrl } from './proxy-settings-service'
-import { appendSDKMessages, updateAgentSessionMeta, getAgentSessionMeta, getAgentSessionMessages, truncateSDKMessages, removeSDKErrorMessage, resolveUserUuidFromSDK, rewindFilesFromSnapshot, rewindPiAgentSession, resolveAgentCwd, getAgentCwdMode } from './agent-session-manager'
+import { appendSDKMessages, updateAgentSessionMeta, getAgentSessionMeta, getAgentSessionMessages, truncateSDKMessages, removeSDKErrorMessage, rewindPiAgentSession, resolveAgentCwd, getAgentCwdMode } from './agent-session-manager'
 import { getAgentWorkspace, getLocalProjectRootStatus, getProjectFilesPath, getWorkspaceMcpConfig, getWorkspaceAutoMemoryDir, getWorkspaceAttachedDirectories, getWorkspaceAttachedFiles } from './agent-workspace-manager'
 import { getAgentWorkspacePath, getAgentSessionWorkspacePath, getSdkConfigDir, getWorkspaceSkillsDir } from './config-paths'
 import { getRuntimeStatus } from './runtime-init'
@@ -96,10 +96,6 @@ type RecoverableAgentQueryOptions = {
 
 function sdkPermissionModeForPromaMode(mode: PromaPermissionMode): PromaPermissionMode {
   return PROMA_PERMISSION_MODE_CONFIG[mode].sdkMode
-}
-
-function normalizeAgentRuntime(_value: unknown): AgentRuntime {
-  return 'pi'
 }
 
 const EMPTY_RESPONSE_RESULT_SUBTYPE = 'empty_response'
@@ -244,8 +240,7 @@ const DEFAULT_MODEL_ID = 'claude-sonnet-5'
  * 聚合一次 SDK 调用涉及的所有附加目录（去重，保持插入顺序）。
  *
  * 发消息（sendMessage）和回退恢复文件（rewindSession）必须使用同一份聚合结果，
- * 否则 SDK 写入 file-history-snapshot 时使用的目录范围，与回退时校验路径越界的目录范围不一致，
- * 会导致 attachedDirectories 内的文件在回退时被静默跳过（"会话回退、代码不回退"）。
+ * sendMessage 使用的附加目录集合保持稳定，确保 Pi 工具访问范围一致。
  *
  * 来源：
  *   1. extraDirs：调用方传入的临时附加目录（例如 sendMessage 时用户当次提交的目录）
@@ -744,7 +739,7 @@ export class AgentOrchestrator {
    * 通过 EventBus 分发 AgentEvent，通过 callbacks 发送控制信号。
    */
   async sendMessage(input: AgentSendInput, callbacks: SessionCallbacks): Promise<void> {
-    const { sessionId, userMessage, channelId, modelId, agentRuntime: inputAgentRuntime, workspaceId: requestedWorkspaceId, additionalDirectories, customMcpServers, permissionModeOverride, mentionedSkills, mentionedMcpServers, mentionedSessionIds, automationContext, retryOfErrorUuid } = input
+    const { sessionId, userMessage, channelId, modelId, workspaceId: requestedWorkspaceId, additionalDirectories, customMcpServers, permissionModeOverride, mentionedSkills, mentionedMcpServers, mentionedSessionIds, automationContext, retryOfErrorUuid } = input
     const stderrChunks: string[] = []
     const streamStartedAt = input.startedAt ?? Date.now()
     let userMessagePersisted = false
@@ -948,22 +943,6 @@ export class AgentOrchestrator {
     }
 
     const appSettings = getSettings()
-    // 所有新执行统一使用 Pi；历史 Claude 会话仅保留转录，并在首次继续时清除不兼容 artifact。
-    const previousAgentRuntime = sessionMeta?.agentRuntime
-    const agentRuntime = normalizeAgentRuntime(inputAgentRuntime)
-    if (previousAgentRuntime !== 'pi') {
-      try {
-        sessionMeta = updateAgentSessionMeta(sessionId, {
-          agentRuntime: 'pi',
-          sdkSessionId: undefined,
-          piSessionFile: undefined,
-          piEntryBindings: undefined,
-        })
-      } catch {
-        // 新会话索引异常时继续运行，后续错误路径会正常暴露。
-      }
-    }
-    console.log(`[Agent 编排] Agent runtime: ${agentRuntime}`)
 
     if (!channel.enabled) {
       reportPreflightError({
@@ -1028,15 +1007,6 @@ export class AgentOrchestrator {
 
     // 4. 读取已有的 SDK session ID（用于 resume）
     let existingSdkSessionId = sessionMeta?.sdkSessionId
-
-    // 4.1 检测回退后的 resume 截断点（快照回退功能）
-    let rewindResumeAt: string | undefined
-    if (sessionMeta?.resumeAtMessageUuid) {
-      rewindResumeAt = sessionMeta.resumeAtMessageUuid
-      // 消费一次后清除
-      updateAgentSessionMeta(sessionId, { resumeAtMessageUuid: undefined })
-      console.log(`[Agent 编排] 检测到回退 resume: resumeSessionAt=${rewindResumeAt}`)
-    }
 
     console.log(`[Agent 编排] Resume 状态: sdkSessionId=${existingSdkSessionId || '无'}, proma sessionId=${sessionId}`)
 
@@ -1105,7 +1075,6 @@ export class AgentOrchestrator {
         sessionId,
         channelId,
         modelId: selectedModelId,
-        agentRuntime: 'pi',
         workspaceId,
         workspaceSlug,
         permissionMode: permissionModeOverride ?? sessionMeta?.permissionMode ?? PROMA_DEFAULT_PERMISSION_MODE,
@@ -1399,19 +1368,14 @@ export class AgentOrchestrator {
       const maxTurns = appSettings.agentMaxTurns && appSettings.agentMaxTurns > 0
         ? appSettings.agentMaxTurns
         : undefined
-      const piReasoningCapability = agentRuntime === 'pi'
-        ? await resolvePiReasoningCapability(channel.provider, selectedModelId)
-        : undefined
-      const piThinkingLevel = agentRuntime === 'pi'
-        ? resolvePiThinkingLevel(appSettings, sessionMeta, channel.provider, selectedModelId, piReasoningCapability)
-        : undefined
+      const piReasoningCapability = await resolvePiReasoningCapability(channel.provider, selectedModelId)
+      const piThinkingLevel = resolvePiThinkingLevel(appSettings, sessionMeta, channel.provider, selectedModelId, piReasoningCapability)
       const allAdditionalDirectories = collectAttachedDirectories({
         extraDirs: additionalDirectories,
         sessionMeta,
         workspaceSlug,
       })
       const systemPromptAppend = buildSystemPrompt({
-        agentRuntime,
         workspaceName: workspace?.name,
         workspaceSlug,
         sessionId,
@@ -1433,21 +1397,15 @@ export class AgentOrchestrator {
         // 仅在 session_id 真正变化时才持久化。SDK v2 几乎每条消息都会回调 onSessionId，
         // capturedSdkSessionId 已初始化为 existingSdkSessionId，并在 recovery 时同步重置。
         const isNewSessionId = sdkSessionId !== capturedSdkSessionId
-        const needsPiSessionFile = agentRuntime === 'pi' && !!piSessionFile && sessionMeta?.piSessionFile !== piSessionFile
+        const needsPiSessionFile = !!piSessionFile && sessionMeta?.piSessionFile !== piSessionFile
         capturedSdkSessionId = sdkSessionId
         if (isNewSessionId || needsPiSessionFile) {
           try {
-            // 用户可在本轮运行中改选下一轮内核；不能让旧 runtime 回填不兼容的 session artifact。
-            const latestSessionMeta = getAgentSessionMeta(sessionId)
-            if (latestSessionMeta?.agentRuntime !== agentRuntime) {
-              console.log(`[Agent 编排] 忽略已切换 runtime 的 session artifact: ${sdkSessionId}`)
-            } else {
-              updateAgentSessionMeta(sessionId, {
-                sdkSessionId,
-                ...(agentRuntime === 'pi' && piSessionFile ? { piSessionFile } : {}),
-              })
-              console.log(`[Agent 编排] 已保存 SDK session_id: ${sdkSessionId}`)
-            }
+            updateAgentSessionMeta(sessionId, {
+              sdkSessionId,
+              ...(piSessionFile ? { piSessionFile } : {}),
+            })
+            console.log(`[Agent 编排] 已保存 SDK session_id: ${sdkSessionId}`)
           } catch (err) {
             console.error(`[Agent 编排] 保存 SDK session_id 失败:`, err)
           }
@@ -1462,7 +1420,7 @@ export class AgentOrchestrator {
         this.eventBus.emit(sessionId, { kind: 'proma_event', event: { type: 'model_resolved', model: resolvedModel } })
       }
       const handleContextWindow = (cw: number): void => {
-        const inferredWindow = inferAgentSdkContextWindow(modelId, channel.provider)
+        const inferredWindow = inferProviderContextWindow(modelId, channel.provider)
         const contextWindow = Math.max(cw, inferredWindow ?? 0) || cw
         console.log(`[Agent 编排] 缓存 contextWindow: ${contextWindow}`)
         // result 消息里的真实 contextWindow 透传到 renderer，
@@ -1474,7 +1432,6 @@ export class AgentOrchestrator {
       }
       const piCustomTools = [...piBuiltinTools, ...piMcpTools]
       const queryOptions: PiAgentQueryOptions = {
-        agentRuntime: 'pi',
         sessionId,
         prompt: finalPrompt,
         // pi runtime 不支持 Claude Agent SDK 的 `[1m]` 扩展上下文变体：
@@ -1528,10 +1485,8 @@ export class AgentOrchestrator {
         onSessionId: handleSessionId,
         onPiEntryBindings: (bindings) => {
           const latest = getAgentSessionMeta(sessionId)
-          // 运行中切到其他内核后，保留旧 turn 展示但不再写入 Pi 专用恢复 artifact。
-          if (latest?.agentRuntime !== 'pi') return
           updateAgentSessionMeta(sessionId, {
-            piEntryBindings: { ...(latest.piEntryBindings ?? {}), ...bindings },
+            piEntryBindings: { ...(latest?.piEntryBindings ?? {}), ...bindings },
           })
         },
         onModelResolved: handleModelResolved,
@@ -2230,7 +2185,7 @@ export class AgentOrchestrator {
           // 此终止分支只会被「非 session-not-found」的错误命中（session 失效已在上文
           // isSessionNotFoundError 分支单独处理并切到恢复模式）。网络断连、服务端 5xx、
           // 未知错误都不代表 SDK 会话本身失效——其完整历史 JSONL 仍保存在
-          // ~/.proma/sdk-config/projects/.../{sdkSessionId}.jsonl 中，依旧可 resume。
+          // Pi session artifact 仍保留，确保下一轮可以继续 resume。
           // 此前这里对 `!apiError`（如普通断连解析不出状态码）一律清除指针，导致下一轮
           // 退化为「仅回填最近 N 条」的冷启动，上下文从满载骤降（#903）。
           if (existingSdkSessionId) {
@@ -2309,29 +2264,6 @@ export class AgentOrchestrator {
     return this.activeSessions.size > 0
   }
 
-  /** 同一个真实本地项目根只能由一个运行中会话执行文件回退。 */
-  private hasOtherActiveSessionForLocalProjectRoot(sessionId: string, localProjectRoot: string): boolean {
-    for (const activeSessionId of this.activeSessions.keys()) {
-      if (activeSessionId === sessionId) continue
-
-      const activeSessionMeta = getAgentSessionMeta(activeSessionId)
-      if (!activeSessionMeta?.workspaceId) continue
-
-      const activeWorkspace = getAgentWorkspace(activeSessionMeta.workspaceId)
-      if (!activeWorkspace?.projectRootPath) continue
-
-      try {
-        if (resolveLocalProjectRootForRewind(activeWorkspace.projectRootPath) === localProjectRoot) {
-          return true
-        }
-      } catch {
-        // 运行中的会话已通过启动时校验；若其根后来不可用，无法安全比较，跳过即可。
-      }
-    }
-
-    return false
-  }
-
   /**
    * 运行中动态切换会话的权限模式
    *
@@ -2357,12 +2289,8 @@ export class AgentOrchestrator {
   /**
    * 回退会话到指定消息点
    *
-   * 1. 直接从 SDK JSONL 的 file-history-snapshot 恢复文件到目标时刻的状态
+   * 1. 由 Pi SessionManager 创建目标 branch artifact
    * 2. 截断 Proma JSONL 到 assistantMessageUuid（inclusive）
-   * 3. 记录 resumeAtMessageUuid，下次发消息时 SDK 从该点分支继续
-   *
-   * 文件恢复通过解析 SDK JSONL 中的快照完成，无需运行中的 Query。
-   * 文件恢复失败时仍然截断对话（优雅降级）。
    */
   async rewindSession(
     sessionId: string,
@@ -2378,78 +2306,12 @@ export class AgentOrchestrator {
       throw new Error('会话没有 SDK session ID，无法回退')
     }
 
-    const workspace = sessionMeta.workspaceId
-      ? getAgentWorkspace(sessionMeta.workspaceId)
-      : undefined
-    const localProjectRoot = workspace?.projectRootPath
-      ? resolveLocalProjectRootForRewind(workspace.projectRootPath)
-      : undefined
-
-    if (localProjectRoot && this.hasOtherActiveSessionForLocalProjectRoot(sessionId, localProjectRoot)) {
-      throw new Error('同一项目的其他会话正在运行，请先停止同项目的其他会话后再回退文件')
-    }
-
-    // Pi 使用原生树状 session 导出一个持久 artifact；不能复用 Claude snapshot
-    // 或仅截断 renderer JSONL，否则下一轮 resume 会重新加载被舍弃的上下文。
-    if (sessionMeta.agentRuntime === 'pi') {
-      await rewindPiAgentSession(sessionId, assistantMessageUuid)
-      const kept = truncateSDKMessages(sessionId, assistantMessageUuid)
-      return {
-        remainingMessages: kept.length,
-        fileRewind: {
-          canRewind: false,
-          error: '已回退 Pi 对话；Pi 文件回退尚未启用，当前未修改任何文件。',
-        },
-      }
-    }
-
-    // 0.5 从 SDK session JSONL 解析对应的 user message UUID（rewindFiles 需要）
-    let projectDir: string | undefined
-    let workspaceSlug: string | undefined
-    if (workspace) {
-      workspaceSlug = workspace.slug
-      projectDir = resolveAgentCwd(workspace, sessionId, sessionMeta.agentCwdMode)
-    }
-    const userMessageUuid = resolveUserUuidFromSDK(sessionMeta.sdkSessionId, assistantMessageUuid, projectDir, sessionMeta.forkSourceSdkSessionId)
-    console.log(`[Agent 编排] 回退: 解析 user uuid=${userMessageUuid || '未找到'} (assistant uuid=${assistantMessageUuid}, forkSource=${sessionMeta.forkSourceSdkSessionId ?? 'none'})`)
-
-    // 1. 文件恢复：直接从 SDK JSONL 的 file-history-snapshot 恢复，无需临时 Query
-    let fileRewindResult: { canRewind: boolean; error?: string; filesChanged?: string[]; insertions?: number; deletions?: number } | undefined
-    if (userMessageUuid === '__LAST_TURN__') {
-      // 最后一个 turn：当前文件系统已是该 turn 完成后的状态，无需回退文件
-      console.log(`[Agent 编排] 回退: 最后一个 turn，跳过文件恢复`)
-      fileRewindResult = { canRewind: true, filesChanged: [] }
-    } else if (userMessageUuid) {
-      try {
-        // 确定 cwd（文件的基准路径）
-        let cwd = homedir()
-        if (projectDir) cwd = projectDir
-        // 收集附加目录（必须与 sendMessage 中传给 SDK 的 additionalDirectories 一致，
-        // 否则会话级 attachedDirectories 内的文件会因路径越界检查被静默跳过）
-        const rewindAttachedDirs = collectAttachedDirectories({ sessionMeta, workspaceSlug })
-        console.log(`[Agent 编排] 回退: 直接从 snapshot 恢复文件 (cwd=${cwd}, forkSource=${sessionMeta.forkSourceSdkSessionId ?? 'none'}, attachedDirs=${rewindAttachedDirs.length})`)
-        fileRewindResult = rewindFilesFromSnapshot(sessionMeta.sdkSessionId, userMessageUuid, cwd, projectDir, sessionMeta.forkSourceSdkSessionId, rewindAttachedDirs)
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err)
-        console.warn('[Agent 编排] 文件恢复失败，继续截断对话:', errMsg)
-        if (err instanceof Error && err.stack) console.warn('[Agent 编排] 文件恢复错误堆栈:', err.stack)
-        fileRewindResult = { canRewind: false, error: errMsg }
-      }
-    } else {
-      fileRewindResult = { canRewind: false, error: '无法从 SDK session 中解析 user message UUID' }
-    }
-
-    // 2. 截断 Proma JSONL
+    // Pi 使用原生树状 session 导出持久 artifact；文件系统不做 snapshot 回退。
+    await rewindPiAgentSession(sessionId, assistantMessageUuid)
     const kept = truncateSDKMessages(sessionId, assistantMessageUuid)
-
-    // 3. 记录 resumeAtMessageUuid，下次发消息时 SDK 从此点继续
-    updateAgentSessionMeta(sessionId, { resumeAtMessageUuid: assistantMessageUuid })
-
-    console.log(`[Agent 编排] 回退完成: sessionId=${sessionId}, 保留 ${kept.length} 条消息, 文件恢复=${fileRewindResult?.canRewind ?? '跳过'}`)
-
     return {
       remainingMessages: kept.length,
-      fileRewind: fileRewindResult,
+      fileRewind: { canRewind: false, error: '已回退 Pi 对话；Pi 文件回退尚未启用，当前未修改任何文件。' },
     }
   }
 

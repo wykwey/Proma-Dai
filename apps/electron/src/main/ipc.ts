@@ -35,7 +35,6 @@ import type {
   RecentMessagesResult,
   AgentSessionMeta,
   AgentSendInput,
-  AgentRuntime,
   AgentThinkingLevel,
   AgentWorkspace,
   AgentGenerateTitleInput,
@@ -787,10 +786,6 @@ function isFailureCacheFresh(key: string): boolean {
 function cacheNull(key: string): null {
   defaultAppFailureCache.set(key, Date.now())
   return null
-}
-
-function isAgentRuntime(value: unknown): value is AgentRuntime {
-  return value === 'claude' || value === 'pi'
 }
 
 function releaseDirectoryWatcherIfUnreferenced(dirPath: string): void {
@@ -1681,7 +1676,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(
     AGENT_IPC_CHANNELS.CREATE_SESSION,
     async (_, title?: string, channelId?: string, workspaceId?: string, modelId?: string): Promise<AgentSessionMeta> => {
-      const session = createAgentSession(title, channelId, workspaceId, modelId, getSettings().agentRuntime ?? 'pi')
+      const session = createAgentSession(title, channelId, workspaceId, modelId)
       return session
     }
   )
@@ -1889,7 +1884,7 @@ export function registerIpcHandlers(): void {
       if (workspace.projectRootPath) watchAttachedDirectory(workspace.projectRootPath)
 
       try {
-        const session = createAgentSession(undefined, channelId, workspace.id, modelId, getSettings().agentRuntime ?? 'pi')
+        const session = createAgentSession(undefined, channelId, workspace.id, modelId)
         return { workspace, session }
       } catch (error) {
         try {
@@ -3679,26 +3674,12 @@ export function registerIpcHandlers(): void {
     if (i.maxRuns !== undefined && (!isFiniteInt(i.maxRuns) || i.maxRuns < 1)) {
       throw new Error(`非法的 maxRuns: ${String(i.maxRuns)}`)
     }
-    if (i.agentRuntime !== undefined && !isAgentRuntime(i.agentRuntime)) {
-      throw new Error(`非法的 agentRuntime: ${String(i.agentRuntime)}`)
-    }
     if (i.permissionMode !== undefined && !validPermissionMode(i.permissionMode)) {
       throw new Error(`非法的 permissionMode: ${String(i.permissionMode)}`)
     }
     if (i.sessionMode !== undefined && i.sessionMode !== 'daily' && i.sessionMode !== 'reuse') {
       throw new Error(`非法的 sessionMode: ${String(i.sessionMode)}`)
     }
-  }
-
-  const validateAutomationRuntimePolicy = (
-    input: Partial<CreateAutomationInput | UpdateAutomationInput>,
-    existing?: Automation,
-  ): void => {
-    if (input.agentRuntime !== undefined && input.agentRuntime !== 'pi') {
-      throw new Error(`不再支持的 Agent runtime: ${String(input.agentRuntime)}；仅支持 pi`)
-    }
-    // 历史任务的 runtime 字段只用于读取兼容；下一次执行由调度器统一迁移到 Pi。
-    void existing
   }
 
   const validateAutomationScheduleComplete = (
@@ -3743,7 +3724,6 @@ export function registerIpcHandlers(): void {
       if (!isNonEmptyString(input.prompt)) throw new Error('prompt 必填')
       // channelId / workspaceId 允许为空（草稿态），但此时任务不能被启用
       validateAutomationFields(input)
-      validateAutomationRuntimePolicy(input)
       validateAutomationScheduleComplete(input)
       const a = createAutomation(input)
       broadcastAutomationsChanged()
@@ -3761,7 +3741,6 @@ export function registerIpcHandlers(): void {
       const existing = getAutomation(input.id)
       if (!existing) return undefined
       validateAutomationFields(input)
-      validateAutomationRuntimePolicy(input, existing)
       validateAutomationScheduleComplete(input, existing)
       const a = updateAutomation(input)
       broadcastAutomationsChanged()

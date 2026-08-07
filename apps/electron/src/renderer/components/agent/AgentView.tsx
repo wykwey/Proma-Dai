@@ -67,7 +67,6 @@ import {
   agentSessionStreamingStateAtomFamily,
   agentChannelIdAtom,
   agentModelIdAtom,
-  agentRuntimeAtom,
   agentSessionChannelMapAtom,
   agentSessionModelMapAtom,
   currentAgentWorkspaceIdAtom,
@@ -113,8 +112,8 @@ import { AgentSessionProvider } from '@/contexts/session-context'
 import { draftSessionIdsAtom } from '@/atoms/draft-session-atoms'
 import { sendWithCmdEnterAtom } from '@/atoms/shortcut-atoms'
 import { useOpenPreview } from '@/components/diff/preview-opener'
-import type { AgentRuntime, AgentSendInput, AgentPendingFile, AgentThinkingLevel, FileDialogLargeFile, FileDialogResult, ModelOption, ReasoningCapability, SDKMessage, SDKUserMessage, ProviderType } from '@proma/shared'
-import { inferAgentSdkContextWindow, inferContextWindow, inferReasoningTransport, isCodexFastModeSupportedModel, MAX_ATTACHMENT_SIZE, normalizeReasoningCapabilityLevel, normalizeReasoningLevel, resolveReasoningCapability, resolveReasoningProfile } from '@proma/shared'
+import type { AgentSendInput, AgentPendingFile, AgentThinkingLevel, FileDialogLargeFile, FileDialogResult, ModelOption, ReasoningCapability, SDKMessage, SDKUserMessage, ProviderType } from '@proma/shared'
+import { inferProviderContextWindow, inferContextWindow, inferReasoningTransport, isCodexFastModeSupportedModel, MAX_ATTACHMENT_SIZE, normalizeReasoningCapabilityLevel, normalizeReasoningLevel, resolveReasoningCapability, resolveReasoningProfile } from '@proma/shared'
 import { fileToBase64, formatFileNames, getFileParentPath } from '@/lib/file-utils'
 import { getFilePanelDragData, INSERT_FILE_MENTION_EVENT, type FilePanelDragItem } from '@/lib/file-panel-drag'
 import { buildQuotedSelectionBlock } from '@/lib/quoted-selection'
@@ -164,7 +163,7 @@ function resolveRunContextWindow(
   previous: number | undefined,
 ): number | undefined {
   return provider
-    ? inferAgentSdkContextWindow(modelId, provider) ?? previous
+    ? inferProviderContextWindow(modelId, provider) ?? previous
     : inferContextWindow(modelId) ?? previous
 }
 
@@ -392,7 +391,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   const hasSessionMeta = Boolean(sessionMeta)
   const agentChannelId = sessionMetaChannelId ?? sessionChannelMap.get(sessionId) ?? defaultChannelId
   const agentModelId = sessionMetaModelId ?? sessionModelMap.get(sessionId) ?? defaultModelId
-  const agentRuntime = useAtomValue(agentRuntimeAtom)
   const [agentThinking, setAgentThinking] = useAtom(agentThinkingAtom)
   const agentEffort = useAtomValue(agentEffortAtom)
   const setSettingsOpen = useSetAtom(settingsOpenAtom)
@@ -418,10 +416,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   // 已有会话首次打开时，从会话元数据初始化 per-session map。
   // setter 内的 `prev.has(sessionId)` 守卫保证幂等，外层不再订阅 Map atom，
   // 避免 setter 写入 → atom 引用变化 → effect 重跑的自循环（React #185）。
-  const sessionAgentRuntime: AgentRuntime = hasSessionMeta
-    ? sessionMeta?.agentRuntime ?? 'claude'
-    : agentRuntime
-  const isLegacyReadOnlySession = hasSessionMeta && sessionAgentRuntime !== 'pi'
   // 只有会话元数据尚未加载时，才允许使用全局默认值初始化新会话。
   React.useEffect(() => {
     if (!sessionId) return
@@ -566,23 +560,22 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     [globalChannels, agentChannelId],
   )
   const isCodexFastModeAvailable = hasSessionMeta
-    && sessionAgentRuntime === 'pi'
     && agentChannelProvider === 'openai-codex'
     && isCodexFastModeSupportedModel(agentModelId ?? undefined)
   const codexFastModeEnabled = isCodexFastModeAvailable && sessionMeta?.codexFastMode === true
-  const reasoningProfile = hasSessionMeta && sessionAgentRuntime === 'pi'
+  const reasoningProfile = hasSessionMeta
     ? resolveReasoningProfile({
       modelId: agentModelId ?? undefined,
       transport: inferReasoningTransport(agentChannelProvider),
     })
     : undefined
-  const reasoningCapabilityKey = `${sessionAgentRuntime}:${agentChannelId ?? ''}:${agentModelId ?? ''}`
+  const reasoningCapabilityKey = `${agentChannelId ?? ''}:${agentModelId ?? ''}`
   const [piReasoningCapability, setPiReasoningCapability] = React.useState<{
     key: string
     capability: ReasoningCapability | undefined
   }>({ key: '', capability: undefined })
   React.useEffect(() => {
-    if (!hasSessionMeta || sessionAgentRuntime !== 'pi' || !agentChannelId || !agentModelId) {
+    if (!hasSessionMeta || !agentChannelId || !agentModelId) {
       setPiReasoningCapability({ key: reasoningCapabilityKey, capability: undefined })
       return
     }
@@ -599,7 +592,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         }
       })
     return () => { cancelled = true }
-  }, [agentChannelId, agentModelId, hasSessionMeta, reasoningCapabilityKey, sessionAgentRuntime])
+  }, [agentChannelId, agentModelId, hasSessionMeta, reasoningCapabilityKey])
 
   const effectiveReasoningCapability = piReasoningCapability.key === reasoningCapabilityKey
     ? piReasoningCapability.capability ?? resolveReasoningCapability({ profile: reasoningProfile })
@@ -888,7 +881,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         userMessage: text,
         channelId,
         modelId: agentModelId || undefined,
-        agentRuntime: sessionAgentRuntime,
         workspaceId: currentWorkspaceId || undefined,
         startedAt: streamStartedAt,
         permissionModeOverride: permissionMode,
@@ -915,7 +907,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     createBaseAdditionalDirectories,
     currentWorkspaceId,
     permissionMode,
-    sessionAgentRuntime,
     sessionId,
     setStreamingStates,
   ])
@@ -1108,7 +1099,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   // 等待 messagesLoaded 确保消息加载完成后再插入乐观消息，避免被加载结果覆盖。
   // 使用 queueMicrotask 延迟发送：避免 setState → 重渲染 → cleanup 取消 timer 的竞态。
   React.useEffect(() => {
-    if (!messagesLoaded || isLegacyReadOnlySession) return
+    if (!messagesLoaded) return
     if (!pendingPrompt) return
     if (pendingPrompt.sessionId !== sessionId) return
     if (!agentChannelId || streaming) return
@@ -1158,7 +1149,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         userMessage: snapshot.message,
         channelId: snapshot.channelId,
         modelId: snapshot.modelId,
-        agentRuntime: sessionAgentRuntime,
         workspaceId: snapshot.workspaceId,
         startedAt: streamStartedAt,
         permissionModeOverride: permissionMode,
@@ -1177,7 +1167,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         })
       })
     })
-  }, [messagesLoaded, pendingPrompt, sessionId, agentChannelId, agentModelId, sessionAgentRuntime, isLegacyReadOnlySession, agentChannelProvider, currentWorkspaceId, streaming, setPendingPrompt, setStreamingStates, permissionMode, attachedDirs, attachedFileDirectories])
+  }, [messagesLoaded, pendingPrompt, sessionId, agentChannelId, agentModelId, agentChannelProvider, currentWorkspaceId, streaming, setPendingPrompt, setStreamingStates, permissionMode, attachedDirs, attachedFileDirectories])
   // ===== 附件处理 =====
 
   /** 为文件生成唯一文件名（避免粘贴多张图片时文件名重复导致覆盖） */
@@ -1878,7 +1868,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     // 如果输入为空但有建议，使用建议内容
     const effectiveText = text || suggestion || ''
     const pendingFilesSnapshot = pendingFilesRef.current
-    if (isLegacyReadOnlySession || !messagesLoaded || (!effectiveText && pendingFilesSnapshot.length === 0) || !agentChannelId || !hasAvailableModel) return
+    if (!messagesLoaded || (!effectiveText && pendingFilesSnapshot.length === 0) || !agentChannelId || !hasAvailableModel) return
     if (!streaming && messagesRefreshingRef.current) {
       toast.info('上一轮消息正在同步', {
         description: '请稍等片刻再发送；队列会在同步完成后继续。',
@@ -2054,7 +2044,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
       userMessage: finalMessage,
       channelId: agentChannelId,
       modelId: agentModelId || undefined,
-      agentRuntime: sessionAgentRuntime,
       workspaceId: currentWorkspaceId || undefined,
       startedAt: streamStartedAt,
       permissionModeOverride: permissionMode,
@@ -2082,7 +2071,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         return map
       })
     })
-  }, [inputContent, createBaseAdditionalDirectories, preparePendingFilesForSend, restoreQueuedAttachmentsToPending, sessionId, agentChannelId, agentModelId, sessionAgentRuntime, agentChannelProvider, currentWorkspaceId, streaming, backgroundWaiting, suggestion, hasAvailableModel, store, consumeQuotedSelection, setStreamingStates, setAgentStreamErrors, setPromptSuggestions, setInputContent, setLiveMessagesMap, permissionMode, messagesLoaded, setQueuedMessages, setQuotedSelectionMap, sendPlainTextAgentMessage])
+  }, [inputContent, createBaseAdditionalDirectories, preparePendingFilesForSend, restoreQueuedAttachmentsToPending, sessionId, agentChannelId, agentModelId, agentChannelProvider, currentWorkspaceId, streaming, backgroundWaiting, suggestion, hasAvailableModel, store, consumeQuotedSelection, setStreamingStates, setAgentStreamErrors, setPromptSuggestions, setInputContent, setLiveMessagesMap, permissionMode, messagesLoaded, setQueuedMessages, setQuotedSelectionMap, sendPlainTextAgentMessage])
 
   /** 停止生成 */
   const handleStop = React.useCallback((): void => {
@@ -2158,7 +2147,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
       userMessage: '/compact',
       channelId: agentChannelId,
       modelId: agentModelId || undefined,
-      agentRuntime: sessionAgentRuntime,
       workspaceId: currentWorkspaceId || undefined,
       startedAt: streamStartedAt,
       permissionModeOverride: permissionMode,
@@ -2181,7 +2169,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         return map
       })
     })
-  }, [sessionId, agentChannelId, agentModelId, sessionAgentRuntime, currentWorkspaceId, streaming, setStreamingStates, store, permissionMode])
+  }, [sessionId, agentChannelId, agentModelId, currentWorkspaceId, streaming, setStreamingStates, store, permissionMode])
 
   /** 复制错误信息到剪贴板 */
   const handleCopyError = React.useCallback(async (): Promise<void> => {
@@ -2276,13 +2264,12 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
       userMessage: lastUserMessage,
       channelId: agentChannelId,
       modelId: agentModelId || undefined,
-      agentRuntime: sessionAgentRuntime,
       workspaceId: currentWorkspaceId || undefined,
       startedAt: streamStartedAt,
       permissionModeOverride: permissionMode,
       ...(retryOfErrorUuid && { retryOfErrorUuid }),
     }).catch(console.error)
-  }, [persistedSDKMessages, sessionId, agentChannelId, agentModelId, sessionAgentRuntime, agentChannelProvider, currentWorkspaceId, streaming, setAgentStreamErrors, setStreamingStates, setMessagesCache, permissionMode])
+  }, [persistedSDKMessages, sessionId, agentChannelId, agentModelId, agentChannelProvider, currentWorkspaceId, streaming, setAgentStreamErrors, setStreamingStates, setMessagesCache, permissionMode])
 
   /** 在新对话继续：创建新会话 + 切换 tab + 使用 &session 引用旧会话 */
   const handleRetryInNewSession = React.useCallback(async (): Promise<void> => {
@@ -2319,7 +2306,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         userMessage: prompt,
         channelId: agentChannelId,
         modelId: agentModelId || undefined,
-        agentRuntime: sessionAgentRuntime,
         workspaceId: currentWorkspaceId || undefined,
         mentionedSessionIds: [sessionId],
         startedAt: streamStartedAt,
@@ -2328,7 +2314,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     } catch (error) {
       console.error('[AgentView] 在新会话中重试失败:', error)
     }
-  }, [sessionId, agentChannelId, agentModelId, sessionAgentRuntime, currentWorkspaceId, openSession, setAgentSessions, setStreamingStates, permissionMode])
+  }, [sessionId, agentChannelId, agentModelId, currentWorkspaceId, openSession, setAgentSessions, setStreamingStates, permissionMode])
 
   /** 分叉会话：从指定消息处创建新会话并自动切换 */
   const handleFork = React.useCallback(async (upToMessageUuid: string): Promise<void> => {
@@ -2572,7 +2558,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   }, [togglePreviewPanel])
 
   const hasTextInput = inputContent.trim().length > 0
-  const canSend = !isLegacyReadOnlySession && messagesLoaded && (streaming || !messagesRefreshing) && (hasTextInput || pendingFiles.length > 0 || !!suggestion) && agentChannelId !== null && hasAvailableModel && (!streaming || hasTextInput)
+  const canSend = messagesLoaded && (streaming || !messagesRefreshing) && (hasTextInput || pendingFiles.length > 0 || !!suggestion) && agentChannelId !== null && hasAvailableModel && (!streaming || hasTextInput)
 
   const inputToolbarItems = React.useMemo<ToolbarItem[]>(() => [
     ...(isCodexFastModeAvailable ? [{
@@ -2648,7 +2634,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
           cacheCreationTokens={contextStatus.cacheCreationTokens}
           contextWindow={contextStatus.contextWindow}
           isEstimated={contextStatus.contextUsageIsEstimated === true}
-          isPiRuntime={sessionAgentRuntime === 'pi'}
           isCompacting={contextStatus.isCompacting}
           isProcessing={streaming}
           sessionId={sessionId}
@@ -2668,7 +2653,6 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     openAIThinkingLevel,
     openAIThinkingLevels,
     updateReasoningLevel,
-    sessionAgentRuntime,
     backgroundWaiting,
     sessionId,
     agentThinking,
@@ -2772,33 +2756,28 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
           sessionPath={sessionPath}
           attachedDirs={allAttachedDirs}
           stoppedByUser={stoppedByUser}
-          onRetry={isLegacyReadOnlySession ? undefined : handleRetry}
-          onRetryInNewSession={isLegacyReadOnlySession ? undefined : handleRetryInNewSession}
-          onRelinkProjectRoot={isLegacyReadOnlySession ? undefined : handleRelinkProjectRoot}
-          onRestoreProjectRoot={isLegacyReadOnlySession ? undefined : () => setRestoreProjectRootDialogOpen(true)}
-          onFork={isLegacyReadOnlySession ? undefined : handleFork}
-          onRewind={isLegacyReadOnlySession ? undefined : handleRewindRequest}
-          onCompact={isLegacyReadOnlySession ? undefined : handleCompact}
+          onRetry={handleRetry}
+          onRetryInNewSession={handleRetryInNewSession}
+          onRelinkProjectRoot={handleRelinkProjectRoot}
+          onRestoreProjectRoot={() => setRestoreProjectRootDialogOpen(true)}
+          onFork={handleFork}
+          onRewind={handleRewindRequest}
+          onCompact={handleCompact}
         />
 
         {/* 权限请求横幅 */}
-        {!isLegacyReadOnlySession && <PermissionBanner sessionId={sessionId} />}
+        <PermissionBanner sessionId={sessionId} />
 
         {/* AskUserQuestion 交互式问答横幅 */}
-        {!isLegacyReadOnlySession && <AskUserBanner sessionId={sessionId} />}
+        <AskUserBanner sessionId={sessionId} />
 
 
         {/* ExitPlanMode 计划审批横幅 */}
-        {!isLegacyReadOnlySession && <ExitPlanModeBanner sessionId={sessionId} />}
+        <ExitPlanModeBanner sessionId={sessionId} />
 
-        {isLegacyReadOnlySession && (
-          <div className="mx-4 mb-4 rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-            这是使用已下线 Claude runtime 创建的历史会话，仅供只读查看。请新建 Pi Agent 会话继续工作。
-          </div>
-        )}
 
-        {/* 输入区域 — 交互横幅显示时隐藏；历史 Claude 会话仅供只读查看 */}
-        {!hasBannerOverlay && !isLegacyReadOnlySession && (
+        {/* 输入区域 — 交互横幅显示时隐藏 */}
+        {!hasBannerOverlay && (
         <div className="px-2.5 pb-2.5 md:px-[18px] md:pb-[18px]" data-input-mode="agent">
           <div
             className={cn(

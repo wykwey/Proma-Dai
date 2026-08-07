@@ -1,14 +1,13 @@
 /**
  * ChannelSettings - 渠道配置页
  *
- * 管理所有渠道的添加、编辑、删除与启用状态；每个渠道直接展示可用的 Agent Core。
+ * 管理所有渠道的添加、编辑、删除与启用状态。Pi 支持所有已启用且可映射的渠道。
  */
 
 import * as React from 'react'
 import { useAtom, useSetAtom } from 'jotai'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { PROVIDER_LABELS } from '@proma/shared'
 import type { Channel } from '@proma/shared'
@@ -60,19 +59,6 @@ export function ChannelSettings(): React.ReactElement {
     loadChannels()
   }, [loadChannels])
 
-  const syncAgentChannelEligibility = React.useCallback(async (
-    channel: Channel,
-    enabled: boolean,
-  ): Promise<void> => {
-    if (enabled || agentChannelId !== channel.id) return
-
-    setAgentChannelId(null)
-    setAgentModelId(null)
-    await window.electronAPI.updateSettings({
-      agentChannelId: undefined,
-      agentModelId: undefined,
-    }).catch(console.error)
-  }, [agentChannelId, setAgentChannelId, setAgentModelId])
 
   /** 删除渠道（通过弹窗确认） */
   const handleDeleteRequest = (channel: Channel): void => {
@@ -106,8 +92,15 @@ export function ChannelSettings(): React.ReactElement {
   /** 切换渠道启用状态 */
   const handleToggle = async (channel: Channel): Promise<void> => {
     try {
-      const savedChannel = await window.electronAPI.updateChannel(channel.id, { enabled: !channel.enabled })
-      await syncAgentChannelEligibility(savedChannel, savedChannel.enabled)
+      await window.electronAPI.updateChannel(channel.id, { enabled: !channel.enabled })
+      if (channel.enabled && agentChannelId === channel.id) {
+        setAgentChannelId(null)
+        setAgentModelId(null)
+        await window.electronAPI.updateSettings({
+          agentChannelId: undefined,
+          agentModelId: undefined,
+        })
+      }
 
       await loadChannels()
     } catch (error) {
@@ -134,7 +127,6 @@ export function ChannelSettings(): React.ReactElement {
       <ChannelForm
         channel={editingChannel}
         onSaved={handleFormSaved}
-        onAgentEligibilityChange={syncAgentChannelEligibility}
         onCancel={handleFormCancel}
       />
     )
@@ -146,7 +138,7 @@ export function ChannelSettings(): React.ReactElement {
       {/* 区块一：模型配置 */}
       <SettingsSection
         title="模型配置"
-        description="管理 AI 供应商连接，配置 API Key 和可用模型。每个渠道会标注可用的 Agent Core。"
+        description="管理 AI 供应商连接，配置 API Key 和可用模型。Pi 支持已启用且可映射的渠道。"
         action={
           <Button size="sm" onClick={() => setViewMode('create')}>
             <Plus size={16} />
@@ -221,12 +213,7 @@ function ChannelRow({ channel, onEdit, onDelete, onToggle }: ChannelRowProps): R
     <SettingsRow
       label={channel.name}
       icon={<img src={getChannelLogo(channel)} alt="" className="w-8 h-8 rounded" />}
-      description={
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span>{description}</span>
-          <AgentCoreChips provider={channel.provider} />
-        </div>
-      }
+      description={description}
       className="group"
     >
       <div className="flex items-center gap-2">
@@ -255,19 +242,3 @@ function ChannelRow({ channel, onEdit, onDelete, onToggle }: ChannelRowProps): R
     </SettingsRow>
   )
 }
-
-function AgentCoreChips(_props: Pick<Channel, 'provider'>): React.ReactElement {
-  return (
-    <div className="inline-flex items-center gap-1" aria-label="支持的 Agent Core">
-      <Badge
-        variant="outline"
-        className="px-1.5 py-0 text-[10px] font-medium leading-5"
-        title="Pi Agent SDK"
-      >
-        Pi
-      </Badge>
-    </div>
-  )
-}
-
-

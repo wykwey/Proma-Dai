@@ -38,7 +38,6 @@ import type {
   AgentMessageSearchResult,
   AgentSessionReferenceSearchInput,
   AgentSessionReferenceSearchResult,
-  AgentRuntime,
   AgentCwdMode,
 } from '@proma/shared'
 import { migratePermissionMode } from '@proma/shared'
@@ -253,7 +252,6 @@ export function createAgentSession(
   channelId?: string,
   workspaceId?: string,
   modelId?: string,
-  _legacyAgentRuntime: AgentRuntime = 'pi',
   agentCwdMode?: AgentCwdMode,
 ): AgentSessionMeta {
   const index = readIndex()
@@ -269,8 +267,6 @@ export function createAgentSession(
     modelId,
     workspaceId,
     agentCwdMode: workspaceId ? agentCwdMode ?? 'project' : undefined,
-    // Claude runtime 已停止支持；即使旧调用方仍传入 legacy 值，新会话也只写入 Pi。
-    agentRuntime: 'pi',
     // 新会话继承已持久化的全局思考偏好，之后仍可按会话单独调整。
     reasoningLevel: defaultThinkingLevel,
     createdAt: now,
@@ -450,7 +446,7 @@ export function getAgentSessionSDKMessages(id: string): SDKMessage[] {
  */
 export function updateAgentSessionMeta(
   id: string,
-  updates: Partial<Pick<AgentSessionMeta, 'title' | 'channelId' | 'modelId' | 'sdkSessionId' | 'piSessionFile' | 'piEntryBindings' | 'agentRuntime' | 'codexFastMode' | 'reasoningLevel' | 'openAIThinkingLevel' | 'workspaceId' | 'pinned' | 'starred' | 'archived' | 'attachedDirectories' | 'attachedFiles' | 'forkSourceDir' | 'forkSourceSdkSessionId' | 'resumeAtMessageUuid' | 'stoppedByUser' | 'permissionMode' | 'completedButUnconfirmed' | 'sourceAutomationId' | 'automationGraduated' | 'parentSessionId' | 'rootSessionId' | 'sourceDelegationId' | 'delegationRole' | 'delegationStatus' | 'delegationDepth' | 'delegationGoal'>>,
+  updates: Partial<Pick<AgentSessionMeta, 'title' | 'channelId' | 'modelId' | 'sdkSessionId' | 'piSessionFile' | 'piEntryBindings' | 'codexFastMode' | 'reasoningLevel' | 'openAIThinkingLevel' | 'workspaceId' | 'pinned' | 'starred' | 'archived' | 'attachedDirectories' | 'attachedFiles' | 'stoppedByUser' | 'permissionMode' | 'completedButUnconfirmed' | 'sourceAutomationId' | 'automationGraduated' | 'parentSessionId' | 'rootSessionId' | 'sourceDelegationId' | 'delegationRole' | 'delegationStatus' | 'delegationDepth' | 'delegationGoal'>>,
 ): AgentSessionMeta {
   const index = readIndex()
   const idx = index.sessions.findIndex((s) => s.id === id)
@@ -523,47 +519,7 @@ export function deleteAgentSession(id: string): void {
 
   console.log(`[Agent 会话] 已删除会话: ${removed.title} (${removed.id})`)
 
-  // 清理 SDK 关联数据（file-history 和 projects 下的 session JSONL）
-  const sdkSessionIds = [removed.sdkSessionId, removed.forkSourceSdkSessionId].filter(Boolean) as string[]
-  if (sdkSessionIds.length > 0) {
-    const sdkConfigDir = getSdkConfigDir()
 
-    const fileHistoryDir = join(sdkConfigDir, 'file-history')
-    for (const sid of sdkSessionIds) {
-      const histDir = join(fileHistoryDir, sid)
-      if (existsSync(histDir)) {
-        try {
-          rmSyncWithRetry(histDir, { recursive: true, force: true })
-          console.log(`[Agent 会话] 已清理 file-history: ${sid}`)
-        } catch (e) {
-          console.warn(`[Agent 会话] 清理 file-history 失败 (${sid}):`, e)
-        }
-      }
-    }
-
-    const projectsDir = join(sdkConfigDir, 'projects')
-    if (existsSync(projectsDir)) {
-      try {
-        for (const hashDir of readdirSync(projectsDir)) {
-          const projPath = join(projectsDir, hashDir)
-          for (const sid of sdkSessionIds) {
-            const sessionFile = join(projPath, `${sid}.jsonl`)
-            if (existsSync(sessionFile)) {
-              try {
-                unlinkSync(sessionFile)
-                console.log(`[Agent 会话] 已清理 SDK session 文件: ${sessionFile}`)
-              } catch (e) {
-                console.warn('[Agent 会话] 清理 SDK session 文件失败:', e)
-              }
-            }
-          }
-          try {
-            if (readdirSync(projPath).length === 0) rmSyncWithRetry(projPath, { recursive: true })
-          } catch { /* ignore */ }
-        }
-      } catch { /* ignore */ }
-    }
-  }
 }
 
 /**
@@ -731,9 +687,6 @@ export async function forkAgentSession(input: ForkSessionInput): Promise<AgentSe
   if (!sourceMeta) {
     throw new Error(`源 Agent 会话不存在: ${input.sessionId}`)
   }
-  if (sourceMeta.agentRuntime !== 'pi') {
-    throw new Error('历史 Claude Agent 会话不再支持分叉；请新建 Pi Agent 会话后继续')
-  }
   if (!sourceMeta.sdkSessionId) {
     throw new Error('该会话没有 Pi session，无法分叉')
   }
@@ -760,7 +713,7 @@ async function forkPiAgentSession(sourceMeta: AgentSessionMeta, input: ForkSessi
   const sourceCwdMode = getAgentCwdMode(sourceMeta)
   const sourceDir = resolveAgentCwd(workspace, sourceMeta.id, sourceCwdMode)
   const sourceWorkbenchDir = resolveAgentWorkbenchDir(workspace, sourceMeta.id)
-  const newMeta = createAgentSession(`${sourceMeta.title} (fork)`, sourceMeta.channelId, sourceMeta.workspaceId, forkModelId, 'pi', sourceCwdMode)
+  const newMeta = createAgentSession(`${sourceMeta.title} (fork)`, sourceMeta.channelId, sourceMeta.workspaceId, forkModelId, sourceCwdMode)
   const destDir = resolveAgentCwd(workspace, newMeta.id, newMeta.agentCwdMode)
   const destWorkbenchDir = resolveAgentWorkbenchDir(workspace, newMeta.id)
 
@@ -780,7 +733,6 @@ async function forkPiAgentSession(sourceMeta: AgentSessionMeta, input: ForkSessi
       sdkSessionId: forkedManager.getSessionId(),
       piSessionFile,
       piEntryBindings: { ...(sourceMeta.piEntryBindings ?? {}) },
-      forkSourceDir: sourceDir,
     })
     newMeta.sdkSessionId = forkedManager.getSessionId()
     newMeta.piSessionFile = piSessionFile
@@ -805,7 +757,7 @@ async function forkPiAgentSession(sourceMeta: AgentSessionMeta, input: ForkSessi
 /** 将当前 Pi 会话切换到指定 assistant turn 的新 branch artifact（持久化回退）。 */
 export async function rewindPiAgentSession(sessionId: string, assistantMessageUuid: string): Promise<void> {
   const meta = getAgentSessionMeta(sessionId)
-  if (!meta || meta.agentRuntime !== 'pi') throw new Error('不是 Pi Agent 会话')
+  if (!meta) throw new Error('Agent 会话不存在')
   const entryId = meta.piEntryBindings?.[assistantMessageUuid]
   if (!entryId) throw new Error('该 Pi 历史消息尚无 entry ID 映射，无法安全回退')
   if (!meta.piSessionFile || !existsSync(meta.piSessionFile)) throw new Error('未找到 Pi session artifact，无法安全回退')
@@ -1108,366 +1060,6 @@ export function removeSDKErrorMessage(id: string, errorUuid: string): boolean {
   writeTextFileAtomic(filePath, content)
   console.log(`[Agent 会话] 已删除重试前错误: sessionId=${id}, uuid=${errorUuid}`)
   return true
-}
-
-/**
- * 从 SDK session JSONL 中查找指定 assistant message 之后最近的 user message UUID
- *
- * SDK session JSONL（~/.proma/sdk-config/projects/...）中的消息都带有 uuid，
- * 但 Proma 自己构造的 user message 没有 uuid。此函数直接读取 SDK 的 JSONL
- * 来解析 rewindFiles 所需的 user message UUID。
- *
- * 对于 fork 会话：Proma JSONL 中的 UUID 来自**源会话**（fork 时直接复制），
- * 而 forked SDK JSONL 中的 UUID 已被重映射。因此 fork 会话需要搜索**源**
- * SDK JSONL 来匹配 assistant UUID。通过 forkSourceSdkSessionId 参数指定。
- *
- * @param sdkSessionId SDK session UUID
- * @param assistantMessageUuid 要回退到的 assistant message UUID
- * @param projectDir SDK 项目目录路径（session 运行时的 cwd）
- * @param forkSourceSdkSessionId 源会话 SDK session ID（fork 会话时传入）
- * @returns user message UUID，找不到时返回 undefined
- */
-export function resolveUserUuidFromSDK(
-  sdkSessionId: string,
-  assistantMessageUuid: string,
-  projectDir?: string,
-  forkSourceSdkSessionId?: string,
-): string | undefined {
-  // 优先搜索当前 session JSONL
-  let sessionFilePath = findSdkSessionJsonl(sdkSessionId, projectDir)
-
-  // 当前 session JSONL 中未找到 assistant UUID（作为消息 .uuid 字段）时，尝试源会话（fork 场景）
-  let usingSourceSession = false
-  if (sessionFilePath && forkSourceSdkSessionId) {
-    try {
-      const lines = readFileSync(sessionFilePath, 'utf-8').split('\n').filter(Boolean)
-      const hasUuidAsField = lines.some((line) => {
-        try {
-          const m = JSON.parse(line)
-          return m.uuid === assistantMessageUuid
-        } catch { return false }
-      })
-      if (!hasUuidAsField) {
-        // Proma JSONL 中的 UUID 来自源会话，forked JSONL 中已重映射
-        const sourceFilePath = findSdkSessionJsonl(forkSourceSdkSessionId, projectDir)
-        if (sourceFilePath) {
-          console.log(`[Agent 会话] resolveUserUuid: fork 会话 UUID 不匹配（非 .uuid 字段），切换到源会话 ${forkSourceSdkSessionId}`)
-          sessionFilePath = sourceFilePath
-          usingSourceSession = true
-        }
-      }
-    } catch { /* fall through to main logic */ }
-  } else if (!sessionFilePath && forkSourceSdkSessionId) {
-    // 当前 session JSONL 完全找不到，直接尝试源会话
-    sessionFilePath = findSdkSessionJsonl(forkSourceSdkSessionId, projectDir)
-    if (sessionFilePath) {
-      usingSourceSession = true
-      console.log(`[Agent 会话] resolveUserUuid: 当前 JSONL 未找到，使用源会话 ${forkSourceSdkSessionId}`)
-    }
-  }
-
-  if (!sessionFilePath) {
-    console.warn(`[Agent 会话] 未找到 SDK session JSONL: sdkSessionId=${sdkSessionId}`)
-    return undefined
-  }
-
-  // 读取并解析 SDK JSONL
-  try {
-    const lines = readFileSync(sessionFilePath, 'utf-8').split('\n').filter(Boolean)
-    const messages = parseJsonlStrict<Record<string, unknown>>(lines, `rewind 解析 SDK JSONL (${usingSourceSession ? '源会话' : '当前会话'})`)
-
-    // 找到 assistant message 的位置
-    const assistantIdx = messages.findIndex((m) => m.uuid === assistantMessageUuid)
-    if (assistantIdx < 0) {
-      console.warn(`[Agent 会话] SDK JSONL 中未找到 assistant uuid=${assistantMessageUuid}${usingSourceSession ? ' (源会话)' : ''}`)
-      return undefined
-    }
-
-    // rewindFiles(userMessageId) 恢复文件到该 user message 发送时的快照状态。
-    // 回退到某个 assistant turn = 恢复到"该 turn 完成后"的文件状态
-    // = 下一轮用户消息发送时的快照（因为快照记录的是 user 消息发出时的文件状态，
-    //   而 assistant turn 完成后到下一条 user 消息之间没有其他文件变化）。
-    //
-    // 策略：向后找第一条非 tool_result 的 user message。
-    // 如果找不到（最后一个 turn），返回 '__LAST_TURN__' 特殊标记 —— 因为当前文件系统
-    // 已经是最后一个 turn 完成后的状态，不需要文件回退。
-
-    const isRealUserMessage = (m: Record<string, unknown>): boolean => {
-      if (m.type !== 'user' || !m.uuid) return false
-      const content = (m.message as { content?: Array<{ type: string }> } | undefined)?.content
-      const hasToolResult = Array.isArray(content) && content.some((b) => b.type === 'tool_result')
-      return !hasToolResult
-    }
-
-    // 向后找下一条真实 user message
-    for (let i = assistantIdx + 1; i < messages.length; i++) {
-      const m = messages[i]!
-      if (isRealUserMessage(m)) {
-        console.log(`[Agent 会话] 解析到下一轮 user uuid=${m.uuid} (assistant uuid=${assistantMessageUuid}${usingSourceSession ? ', 源会话' : ''})`)
-        return m.uuid as string
-      }
-    }
-
-    // 最后一个 turn — 当前文件系统已是该 turn 完成后的状态，无需文件回退
-    console.log(`[Agent 会话] 最后一个 turn，无需文件回退 (assistant uuid=${assistantMessageUuid})`)
-    return '__LAST_TURN__'
-  } catch (err) {
-    console.warn(`[Agent 会话] 读取 SDK session JSONL 失败:`, err)
-    return undefined
-  }
-}
-
-/**
- * 在 SDK 项目目录中查找指定 session 的 JSONL 文件。
- *
- * @param sdkSessionId SDK session ID
- * @param projectDir 项目目录（可选，优先在此目录的哈希下查找）
- * @returns JSONL 文件路径，找不到返回 undefined
- */
-function findSdkSessionJsonl(sdkSessionId: string, _projectDir?: string): string | undefined {
-  const sdkConfigDir = getSdkConfigDir()
-
-  // 遍历所有项目目录查找匹配的 session JSONL
-  // （SDK 的目录命名规则与 Proma 不完全一致，直接遍历最可靠）
-  const projectsDir = join(sdkConfigDir, 'projects')
-  if (existsSync(projectsDir)) {
-    for (const dir of readdirSync(projectsDir)) {
-      const candidate = join(projectsDir, dir, `${sdkSessionId}.jsonl`)
-      if (existsSync(candidate)) return candidate
-    }
-  }
-
-  return undefined
-}
-
-/** Node 20–25 均兼容的最小 path API；测试可注入 Windows 路径语义。 */
-type RewindPathApi = {
-  isAbsolute(path: string): boolean
-  resolve(...pathSegments: string[]): string
-  relative(from: string, to: string): string
-  sep: string
-}
-
-const nativeRewindPathApi: RewindPathApi = { isAbsolute, resolve, relative, sep }
-
-/**
- * 将快照中的路径解析为允许目录内的绝对路径。
- * pathApi 参数让 Windows 路径语义可以在非 Windows 平台上独立测试。
- */
-export function resolveSafeRewindPath(
-  filePath: string,
-  cwd: string,
-  attachedDirectories: string[] = [],
-  pathApi: RewindPathApi = nativeRewindPathApi,
-): string | undefined {
-  const resolvedCwd = pathApi.resolve(cwd)
-  const resolvedPath = pathApi.isAbsolute(filePath)
-    ? pathApi.resolve(filePath)
-    : pathApi.resolve(resolvedCwd, filePath)
-  const allowedDirs = [resolvedCwd, ...attachedDirectories.map((dir) => pathApi.resolve(dir))]
-
-  const isAllowed = allowedDirs.some((dir) => {
-    const relativePath = pathApi.relative(dir, resolvedPath)
-    return relativePath === '' || (
-      relativePath !== '..'
-      && !relativePath.startsWith(`..${pathApi.sep}`)
-      && !pathApi.isAbsolute(relativePath)
-    )
-  })
-
-  return isAllowed ? resolvedPath : undefined
-}
-
-/**
- * 直接从 SDK JSONL 的 file-history-snapshot 恢复文件到指定 user message 时的状态。
- *
- * 绕过 SDK 的 rewindFiles API（避免分支加载问题），直接：
- * 1. 读取 SDK JSONL 中的所有 file-history-snapshot
- * 2. 构建目标 user message 时的文件状态表
- * 3. 从 file-history 备份目录恢复文件
- *
- * 对于 fork 出的会话：resolveUserUuidFromSDK 已从源 SDK JSONL 解析出源空间的 user UUID，
- * 因此 userMessageUuid 可能在源 JSONL 中而非 forked JSONL 中。当在当前 JSONL 中找不到
- * 目标 UUID 时，自动 fallback 到源会话的 JSONL 和 file-history 备份。
- *
- * @param sdkSessionId  SDK session ID
- * @param userMessageUuid  目标 user message UUID（恢复到此时的文件状态）
- * @param cwd  会话工作目录（文件的基准路径）
- * @param projectDir  项目目录（可选，用于定位 SDK JSONL）
- * @param forkSourceSdkSessionId  源会话 SDK session ID（可选，fork 会话回退时使用）
- * @param attachedDirectories  附加的外部目录列表（绝对路径，SDK 会将这些目录下的文件以绝对路径记录在 snapshot 中）
- */
-export function rewindFilesFromSnapshot(
-  sdkSessionId: string,
-  userMessageUuid: string,
-  cwd: string,
-  projectDir?: string,
-  forkSourceSdkSessionId?: string,
-  attachedDirectories?: string[],
-): { canRewind: boolean; error?: string; filesChanged?: string[]; insertions?: number; deletions?: number } {
-  const sdkConfigDir = getSdkConfigDir()
-
-  // 1. 查找 SDK session JSONL（优先当前 session，找不到目标 UUID 时 fallback 到源会话）
-  let sessionFilePath = findSdkSessionJsonl(sdkSessionId, projectDir)
-  let effectiveSdkSessionId = sdkSessionId
-  let isForkFallback = false
-
-  // 2. 读取所有消息，构建到目标 user message 为止的文件状态
-  try {
-    let messages: Record<string, unknown>[] = []
-    if (sessionFilePath) {
-      const lines = readFileSync(sessionFilePath, 'utf-8').split('\n').filter(Boolean)
-      messages = parseJsonlStrict<Record<string, unknown>>(lines, 'rewindFilesFromSnapshot 解析当前 JSONL')
-    }
-
-    // 找到目标 user message 的位置
-    let targetIdx = messages.findIndex((m) => m.uuid === userMessageUuid)
-
-    // Fork 场景：userMessageUuid 来自源会话（resolveUserUuidFromSDK 已做过 fallback），
-    // 在 forked JSONL 中找不到 → 直接切换到源会话 JSONL
-    if (targetIdx < 0 && forkSourceSdkSessionId) {
-      console.log(`[Agent 会话] rewindFilesFromSnapshot: 目标 UUID 在当前 JSONL 中未找到，切换到源会话 ${forkSourceSdkSessionId}`)
-      const sourceFilePath = findSdkSessionJsonl(forkSourceSdkSessionId, projectDir)
-      if (!sourceFilePath) {
-        return { canRewind: false, error: '未找到源会话 SDK session JSONL（fork 回退需要源会话数据）' }
-      }
-      const sourceLines = readFileSync(sourceFilePath, 'utf-8').split('\n').filter(Boolean)
-      messages = parseJsonlStrict<Record<string, unknown>>(sourceLines, 'rewindFilesFromSnapshot 解析源会话 JSONL')
-      targetIdx = messages.findIndex((m) => m.uuid === userMessageUuid)
-      effectiveSdkSessionId = forkSourceSdkSessionId
-      isForkFallback = true
-
-      if (targetIdx < 0) {
-        return { canRewind: false, error: `源会话 SDK JSONL 中也未找到 user message uuid=${userMessageUuid}` }
-      }
-      console.log(`[Agent 会话] rewindFilesFromSnapshot: 在源会话中找到目标 UUID (idx=${targetIdx})`)
-    } else if (targetIdx < 0) {
-      return { canRewind: false, error: `SDK JSONL 中未找到 user message uuid=${userMessageUuid}` }
-    }
-
-    // 查找目标 user message 对应的 snapshot（isSnapshotUpdate: false 且 messageId 匹配）
-    // SDK 的 file-history-snapshot 有两种：
-    // - isSnapshotUpdate: false — user message 发出时的完整文件追踪状态
-    // - isSnapshotUpdate: true — assistant 工具修改文件前的增量备份
-    // 只使用 user message snapshot 来构建目标时刻的文件状态。
-    const fileState = new Map<string, string | null>()
-    let targetSnapshotFound = false
-
-    for (const m of messages) {
-      if (m.type !== 'file-history-snapshot') continue
-      if (m.isSnapshotUpdate) continue
-      const snapshot = m.snapshot as {
-        messageId?: string
-        trackedFileBackups?: Record<string, { backupFileName: string | null }>
-      } | undefined
-      if (snapshot?.messageId === userMessageUuid && snapshot.trackedFileBackups) {
-        for (const [filePath, info] of Object.entries(snapshot.trackedFileBackups)) {
-          fileState.set(filePath, info.backupFileName)
-        }
-        targetSnapshotFound = true
-      }
-    }
-
-    // 同时收集 target snapshot 对应的增量更新（isSnapshotUpdate: true 且 snapshot.messageId 匹配）
-    // 这些记录了 target user message 那轮 assistant 操作前的文件备份
-    if (targetSnapshotFound) {
-      for (const m of messages) {
-        if (m.type !== 'file-history-snapshot' || !m.isSnapshotUpdate) continue
-        const snapshot = m.snapshot as {
-          messageId?: string
-          trackedFileBackups?: Record<string, { backupFileName: string | null }>
-        } | undefined
-        if (snapshot?.messageId === userMessageUuid && snapshot.trackedFileBackups) {
-          // 增量更新可能记录了更多被追踪的文件，但不覆盖已有状态
-          for (const [filePath, info] of Object.entries(snapshot.trackedFileBackups)) {
-            if (!fileState.has(filePath)) {
-              fileState.set(filePath, info.backupFileName)
-            }
-          }
-        }
-      }
-    }
-
-    // 处理 target 之后新创建的文件（它们在 target 时不存在，需要删除）
-    for (let i = targetIdx + 1; i < messages.length; i++) {
-      const m = messages[i]!
-      if (m.type !== 'file-history-snapshot') continue
-
-      const snapshot = m.snapshot as {
-        trackedFileBackups?: Record<string, { backupFileName: string | null }>
-      } | undefined
-      if (!snapshot?.trackedFileBackups) continue
-
-      for (const [filePath, info] of Object.entries(snapshot.trackedFileBackups)) {
-        // 如果这个文件在 target 时不存在（没被追踪），且 backupFileName 为 null（新创建的），标记删除
-        if (!fileState.has(filePath) && info.backupFileName === null) {
-          fileState.set(filePath, null) // null = 文件应该不存在
-        }
-      }
-    }
-
-    if (fileState.size === 0) {
-      if (!targetSnapshotFound) {
-        console.log(`[Agent 会话] rewindFilesFromSnapshot: 目标消息无文件快照记录`)
-        return { canRewind: false, error: '目标消息无文件快照记录（会话可能在启用文件检查点前创建）' }
-      }
-      console.log(`[Agent 会话] rewindFilesFromSnapshot: 快照存在但无文件变化`)
-      return { canRewind: true, filesChanged: [] }
-    }
-
-    // 3. 恢复文件（fork 会话使用源会话的 file-history 备份）
-    const fileHistoryDir = join(sdkConfigDir, 'file-history', effectiveSdkSessionId)
-    const filesChanged: string[] = []
-
-    for (const [filePath, backupFileName] of fileState) {
-      // SDK 对 cwd 内文件使用相对路径，对 additionalDirectories 内文件使用绝对路径
-      const fullPath = resolveSafeRewindPath(filePath, cwd, attachedDirectories)
-      if (!fullPath) {
-        console.warn(`[Agent 会话] rewindFiles: 拒绝路径越界 ${filePath}`)
-        continue
-      }
-
-      if (backupFileName === null) {
-        // 文件在 target 时不存在 → 删除
-        if (existsSync(fullPath)) {
-          try {
-            unlinkSync(fullPath)
-            filesChanged.push(filePath)
-            console.log(`[Agent 会话] rewindFiles: 删除 ${filePath}`)
-          } catch (err) {
-            console.warn(`[Agent 会话] rewindFiles: 删除失败 ${filePath}:`, err)
-          }
-        }
-      } else {
-        // 文件在 target 时存在 → 用备份恢复
-        const backupPath = resolveSafeRewindPath(backupFileName, fileHistoryDir)
-        if (!backupPath) {
-          console.warn(`[Agent 会话] rewindFiles: 拒绝备份路径越界 ${backupFileName}`)
-          continue
-        }
-        if (!existsSync(backupPath)) {
-          console.warn(`[Agent 会话] rewindFiles: 备份文件不存在 ${backupPath}`)
-          continue
-        }
-        try {
-          const backupContent = readFileSync(backupPath)
-          // 确保目录存在
-          const dir = dirname(fullPath)
-          if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-          writeFileSync(fullPath, backupContent)
-          filesChanged.push(filePath)
-          console.log(`[Agent 会话] rewindFiles: 恢复 ${filePath} ← ${backupFileName}${isForkFallback ? ' (from source session)' : ''}`)
-        } catch (err) {
-          console.warn(`[Agent 会话] rewindFiles: 恢复失败 ${filePath}:`, err)
-        }
-      }
-    }
-
-    console.log(`[Agent 会话] rewindFilesFromSnapshot 完成: ${filesChanged.length} 个文件已恢复${isForkFallback ? ' (fork fallback)' : ''}`)
-    return { canRewind: true, filesChanged }
-  } catch (err) {
-    return { canRewind: false, error: err instanceof Error ? err.message : String(err) }
-  }
 }
 
 /**

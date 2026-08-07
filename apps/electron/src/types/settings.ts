@@ -4,7 +4,7 @@
  * 主题模式、IPC 通道等设置相关定义。
  */
 
-import type { AgentRuntime, EnvironmentCheckResult, ThinkingConfig, AgentEffort, AgentThinkingLevel, WindowsShellPreference } from '@proma/shared'
+import type { EnvironmentCheckResult, ThinkingConfig, AgentEffort, AgentThinkingLevel, WindowsShellPreference } from '@proma/shared'
 
 /** 通知音场景类型 */
 export type NotificationSoundType = 'taskComplete' | 'permissionRequest' | 'exitPlanMode'
@@ -60,9 +60,6 @@ export const DEFAULT_THEME_MODE: ThemeMode = 'dark'
 /** 默认特殊风格 */
 export const DEFAULT_THEME_STYLE: ThemeStyle = 'default'
 
-/** 新建 Agent 会话与自动任务的默认 runtime。新执行统一使用 Pi。 */
-export const DEFAULT_AGENT_RUNTIME: AgentRuntime = 'pi'
-
 /** Markdown 预览字号档位 */
 export type MarkdownFontSize = 'small' | 'medium' | 'large'
 
@@ -79,12 +76,8 @@ export interface AppSettings {
   agentChannelId?: string
   /** Agent 默认模型 ID */
   agentModelId?: string
-  /** @deprecated 旧 Claude runtime 渠道白名单，仅用于兼容读取历史设置。 */
-  agentChannelIds?: string[]
   /** Agent 当前工作区 ID */
   agentWorkspaceId?: string
-  /** 新 Agent 会话默认使用的 runtime；当前产品写入值固定为 pi。 */
-  agentRuntime?: AgentRuntime
   /** Windows 上 Agent Bash 工具的运行环境；默认自动选择 Git Bash，WSL 需用户显式启用。 */
   windowsShellPreference?: WindowsShellPreference
   /** 侧栏「自动任务」合成项目组在项目列表中的位置索引（默认 0 = 最靠前；可拖拽调整） */

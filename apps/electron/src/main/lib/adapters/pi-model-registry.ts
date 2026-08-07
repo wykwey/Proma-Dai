@@ -10,7 +10,7 @@ import {
   CODEX_GPT_54_MINI_CONTEXT_WINDOW,
   CODEX_GPT_56_CONTEXT_WINDOW,
   extractZhipuCodingTeamApiToken,
-  inferAgentSdkContextWindow,
+  inferProviderContextWindow,
   inferCodexAlignedGPT5ContextWindow,
   resolveReasoningCapability,
   resolveReasoningProfile,
@@ -465,7 +465,7 @@ async function resolvePiModelDefaults(input: PiAgentQueryOptions): Promise<PiMod
   const isVolcengineGlm52 = (input.provider === 'doubao' || input.provider === 'ark-coding-plan')
     && input.model?.toLowerCase() === 'glm-5.2'
   const catalogContextWindow = catalogModel?.contextWindow ?? DEFAULT_CONTEXT_WINDOW
-  const inferredContextWindow = inferAgentSdkContextWindow(input.model, input.provider) ?? DEFAULT_CONTEXT_WINDOW
+  const inferredContextWindow = inferProviderContextWindow(input.model, input.provider) ?? DEFAULT_CONTEXT_WINDOW
   return {
     reasoning: catalogModel?.reasoning ?? true,
     thinkingLevelMap: providerSpecificCapabilities?.thinkingLevelMap

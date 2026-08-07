@@ -6,7 +6,6 @@
  */
 
 import {
-  type AgentRuntime,
   type Automation,
   type AutomationScheduleType,
   type CreateAutomationInput,
@@ -29,7 +28,6 @@ interface AutomationAgentToolContext {
   sessionId: string
   channelId: string
   modelId?: string
-  agentRuntime?: AgentRuntime
   workspaceId?: string
   triggeredBy?: 'user' | 'automation' | 'delegation'
 }
@@ -78,9 +76,6 @@ function validateScheduleFields(input: Partial<CreateAutomationInput | UpdateAut
   if (input.maxRuns !== undefined && (!isFiniteInt(input.maxRuns) || input.maxRuns < 1)) {
     throw new Error(`非法的 maxRuns: ${String(input.maxRuns)}（应为 ≥1 的整数）`)
   }
-  if (input.agentRuntime !== undefined && input.agentRuntime !== 'pi') {
-    throw new Error(`非法的 agentRuntime: ${String(input.agentRuntime)}`)
-  }
   if (input.sessionMode !== undefined && input.sessionMode !== 'daily' && input.sessionMode !== 'reuse') {
     throw new Error(`非法的 sessionMode: ${String(input.sessionMode)}`)
   }
@@ -99,7 +94,6 @@ function summarizeAutomation(a: Automation, includeHistory: boolean): Record<str
     scheduledAt: a.scheduledAt,
     maxRuns: a.maxRuns,
     runCount: a.runCount ?? 0,
-    agentRuntime: 'pi',
     completedAt: a.completedAt,
     sessionMode: a.sessionMode,
     workspaceId: a.workspaceId,

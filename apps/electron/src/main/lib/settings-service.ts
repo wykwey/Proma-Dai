@@ -7,7 +7,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { getSettingsPath } from './config-paths'
-import { DEFAULT_AGENT_RUNTIME, DEFAULT_THEME_MODE } from '../../types'
+import { DEFAULT_THEME_MODE } from '../../types'
 import type { AppSettings } from '../../types'
 
 /**
@@ -27,7 +27,6 @@ export function getSettings(): AppSettings {
       longTextPasteAsAttachmentEnabled: false,
       richTextRenderingEnabled: false,
       builtinMcpDisabledIds: [],
-      agentRuntime: DEFAULT_AGENT_RUNTIME,
       windowsShellPreference: 'auto',
       agentThinking: { type: 'adaptive' },
     }
@@ -35,19 +34,16 @@ export function getSettings(): AppSettings {
 
   try {
     const raw = readFileSync(filePath, 'utf-8')
-    const data = JSON.parse(raw) as Partial<AppSettings> & { experimentalAgentRuntimeSwitchEnabled?: boolean }
-    // Pi runtime 已默认可用；读取时清理旧版本遗留的实验开关。
-    const { experimentalAgentRuntimeSwitchEnabled: _legacyRuntimeSwitch, ...settings } = data
+    const settings = JSON.parse(raw) as Partial<AppSettings>
     return {
       ...settings,
-      themeMode: data.themeMode || DEFAULT_THEME_MODE,
-      onboardingCompleted: data.onboardingCompleted ?? false,
-      environmentCheckSkipped: data.environmentCheckSkipped ?? false,
-      notificationsEnabled: data.notificationsEnabled ?? true,
-      longTextPasteAsAttachmentEnabled: data.longTextPasteAsAttachmentEnabled ?? false,
-      richTextRenderingEnabled: data.richTextRenderingEnabled ?? false,
+      themeMode: settings.themeMode || DEFAULT_THEME_MODE,
+      onboardingCompleted: settings.onboardingCompleted ?? false,
+      environmentCheckSkipped: settings.environmentCheckSkipped ?? false,
+      notificationsEnabled: settings.notificationsEnabled ?? true,
+      longTextPasteAsAttachmentEnabled: settings.longTextPasteAsAttachmentEnabled ?? false,
+      richTextRenderingEnabled: settings.richTextRenderingEnabled ?? false,
       builtinMcpDisabledIds: settings.builtinMcpDisabledIds ?? [],
-      agentRuntime: settings.agentRuntime ?? DEFAULT_AGENT_RUNTIME,
       windowsShellPreference: settings.windowsShellPreference ?? 'auto',
       agentThinking: settings.agentThinking ?? { type: 'adaptive' },
     }
@@ -61,7 +57,6 @@ export function getSettings(): AppSettings {
       longTextPasteAsAttachmentEnabled: false,
       richTextRenderingEnabled: false,
       builtinMcpDisabledIds: [],
-      agentRuntime: DEFAULT_AGENT_RUNTIME,
       windowsShellPreference: 'auto',
       agentThinking: { type: 'adaptive' },
     }

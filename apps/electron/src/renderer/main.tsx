@@ -24,7 +24,6 @@ import {
 import {
   agentChannelIdAtom,
   agentModelIdAtom,
-  agentRuntimeAtom,
   agentWorkspacesAtom,
   agentSessionsAtom,
   currentAgentWorkspaceIdAtom,
@@ -151,7 +150,6 @@ function ThemeInitializer(): null {
 function AgentSettingsInitializer(): null {
   const setAgentChannelId = useSetAtom(agentChannelIdAtom)
   const setAgentModelId = useSetAtom(agentModelIdAtom)
-  const setAgentRuntime = useSetAtom(agentRuntimeAtom)
   const setAgentWorkspaces = useSetAtom(agentWorkspacesAtom)
   const setCurrentWorkspaceId = useSetAtom(currentAgentWorkspaceIdAtom)
   const bumpCapabilities = useSetAtom(workspaceCapabilitiesVersionAtom)
@@ -195,17 +193,12 @@ function AgentSettingsInitializer(): null {
         store.set(selectedModelAtom, null)
       }
 
-      // 新 Agent 执行统一使用 Pi；旧 Claude 会话的 runtime 只从各自元数据读取并只读展示。
-      setAgentRuntime('pi')
-
       const selectedChannel = settings.agentChannelId
         ? channels.find((channel) => channel.id === settings.agentChannelId)
         : undefined
       const selectedChannelIsUsable = selectedChannel?.enabled
 
       const updates: Parameters<typeof window.electronAPI.updateSettings>[0] = {}
-      if (settings.agentRuntime !== 'pi') updates.agentRuntime = 'pi'
-
       // 验证并加载 Agent 默认渠道/模型。Pi 支持任意已启用渠道。
       if (settings.agentChannelId && selectedChannelIsUsable) {
         setAgentChannelId(settings.agentChannelId)
@@ -257,7 +250,7 @@ function AgentSettingsInitializer(): null {
       console.error(err)
       setAgentSettingsReady(true) // 即使出错也标记就绪，避免永远阻塞
     })
-  }, [setAgentChannelId, setAgentModelId, setAgentRuntime, setAgentWorkspaces, setCurrentWorkspaceId, setThinking, setEffort, setMaxBudget, setMaxTurns, setAutomationGroupOrder, setChannels, setChannelsLoaded, setAgentSettingsReady])
+  }, [setAgentChannelId, setAgentModelId, setAgentWorkspaces, setCurrentWorkspaceId, setThinking, setEffort, setMaxBudget, setMaxTurns, setAutomationGroupOrder, setChannels, setChannelsLoaded, setAgentSettingsReady])
 
   // 工作区切换时重置能力缓存，预加载基线
   useEffect(() => {

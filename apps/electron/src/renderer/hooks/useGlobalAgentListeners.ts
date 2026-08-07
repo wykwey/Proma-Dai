@@ -62,7 +62,7 @@ import { previewFileMapAtom } from '@/atoms/preview-atoms'
 import type { NotificationSoundType } from '@/types/settings'
 import { toast } from 'sonner'
 import type { AgentStreamEvent, AgentStreamCompletePayload, AgentEvent, AgentStreamPayload, SDKAssistantMessage, SDKUserMessage, SDKSystemMessage, SDKContentBlock, SDKUserContentBlock, PromaEvent, AgentSessionMeta, ProviderType } from '@proma/shared'
-import { inferAgentSdkContextWindow, inferContextWindow } from '@proma/shared'
+import { inferProviderContextWindow, inferContextWindow } from '@proma/shared'
 import { buildExternalAgentRunActivation, shouldActivateExternalAgentRun } from '@/lib/external-agent-run'
 import { upsertAgentSession, mergeFetchedAgentSessions } from '@/lib/agent-session-list'
 import {
@@ -257,7 +257,7 @@ function payloadToLegacyEvents(payload: AgentStreamPayload): AgentEvent[] {
         const modelName = aMsg._channelModelId ?? aMsg.message.model
         const provider = aMsg._channelProvider
         const fallbackWindow = provider
-          ? inferAgentSdkContextWindow(modelName, provider)
+          ? inferProviderContextWindow(modelName, provider)
           : inferContextWindow(modelName)
         events.push({
           type: 'usage_update',
@@ -314,12 +314,12 @@ function payloadToLegacyEvents(payload: AgentStreamPayload): AgentEvent[] {
       // 避免子 Agent 的小窗口覆盖主模型的大窗口、导致指示器飘忽。
       let contextWindow: number | undefined
       const fallbackWindow = rMsg._channelProvider
-        ? inferAgentSdkContextWindow(rMsg._channelModelId, rMsg._channelProvider)
+        ? inferProviderContextWindow(rMsg._channelModelId, rMsg._channelProvider)
         : inferContextWindow(rMsg._channelModelId)
       if (rMsg.modelUsage) {
         for (const [modelId, info] of Object.entries(rMsg.modelUsage)) {
           const modelFallbackWindow = rMsg._channelProvider
-            ? inferAgentSdkContextWindow(rMsg._channelModelId ?? modelId, rMsg._channelProvider)
+            ? inferProviderContextWindow(rMsg._channelModelId ?? modelId, rMsg._channelProvider)
             : inferContextWindow(rMsg._channelModelId ?? modelId)
           const candidate = Math.max(info?.contextWindow ?? 0, modelFallbackWindow ?? 0) || undefined
           if (candidate && (contextWindow === undefined || candidate > contextWindow)) {

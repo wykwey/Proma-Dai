@@ -130,30 +130,6 @@ describe('Agent 会话 JSONL 读取', () => {
     expect(messages.map((message) => message.type)).toEqual(['user', 'assistant'])
   })
 
-  test('Given SDK rewind JSONL 存在损坏行 When 从快照恢复文件 Then 严格失败避免误报成功', () => {
-    const cwd = join(tempHome, 'workspace')
-    mkdirSync(cwd, { recursive: true })
-    writeSdkSessionJsonl('sdk-session-with-bad-line', [
-      JSON.stringify({ type: 'user', uuid: 'user-1', message: { content: [{ type: 'text', text: '修改文件' }] } }),
-      '{ 这不是合法 JSON',
-      JSON.stringify({
-        type: 'file-history-snapshot',
-        isSnapshotUpdate: false,
-        snapshot: {
-          messageId: 'user-1',
-          trackedFileBackups: {
-            'a.txt': { backupFileName: null },
-          },
-        },
-      }),
-    ])
-
-    const result = manager.rewindFilesFromSnapshot('sdk-session-with-bad-line', 'user-1', cwd)
-
-    expect(result.canRewind).toBe(false)
-    expect(result.error).toContain('JSONL 第 2 行解析失败')
-  })
-
   test('Given 会话 JSONL 存在损坏行 When 截断 SDKMessage Then 抛错避免重写不完整历史', () => {
     writeAgentSessionJsonl('session-truncate-bad-line', [
       JSON.stringify({ type: 'assistant', uuid: 'assistant-1', message: { content: [{ type: 'text', text: '完成' }] } }),
@@ -165,8 +141,8 @@ describe('Agent 会话 JSONL 读取', () => {
   })
 })
 
-describe('Agent 会话 runtime 元数据', () => {
-  test('Given 已保存 OpenAI medium 默认值 When 新建会话或旧调用方传 Claude Then 均归一为 Pi 并持久化 medium', () => {
+describe('Agent 会话元数据', () => {
+  test('Given Pi-only 会话 When 创建并读取 Then 不持久化 runtime 元数据', () => {
     const settingsPath = join(tempHome, '.proma', 'settings.json')
     mkdirSync(join(tempHome, '.proma'), { recursive: true })
     writeFileSync(settingsPath, JSON.stringify({
@@ -176,17 +152,8 @@ describe('Agent 会话 runtime 元数据', () => {
     }), 'utf-8')
 
     try {
-      const defaultRuntimeSession = manager.createAgentSession('默认内核会话')
-      const legacyRuntimeSession = manager.createAgentSession('旧调用方会话', undefined, undefined, undefined, 'claude')
-
-      expect(defaultRuntimeSession.agentRuntime).toBe('pi')
-      expect(legacyRuntimeSession.agentRuntime).toBe('pi')
-      expect(manager.getAgentSessionMeta(defaultRuntimeSession.id)?.agentRuntime).toBe('pi')
-      expect(manager.getAgentSessionMeta(legacyRuntimeSession.id)?.agentRuntime).toBe('pi')
-      expect(defaultRuntimeSession.reasoningLevel).toBe('medium')
-      expect(legacyRuntimeSession.reasoningLevel).toBe('medium')
-      expect(manager.getAgentSessionMeta(defaultRuntimeSession.id)?.reasoningLevel).toBe('medium')
-      expect(manager.getAgentSessionMeta(legacyRuntimeSession.id)?.reasoningLevel).toBe('medium')
+      const session = manager.createAgentSession('Pi 会话')
+      expect(session.reasoningLevel).toBe('medium')
     } finally {
       rmSync(settingsPath, { force: true })
     }
@@ -219,7 +186,7 @@ describe('Agent 会话 runtime 元数据', () => {
   })
 
   test('Given session settings When updating Then persists reasoning depth per session', () => {
-    const session = manager.createAgentSession('Codex 会话', undefined, undefined, undefined, 'pi')
+    const session = manager.createAgentSession('Codex 会话')
 
     const updated = manager.updateAgentSessionMeta(session.id, { reasoningLevel: 'xhigh' })
 

@@ -10,7 +10,7 @@
 import { Type } from 'typebox'
 import type { ToolDefinition } from '@earendil-works/pi-coding-agent'
 import type { AgentToolResult } from '@earendil-works/pi-agent-core'
-import type { AgentRuntime, PromaPermissionMode } from '@proma/shared'
+import type { PromaPermissionMode } from '@proma/shared'
 import type {
   CreateAutomationInput,
   UpdateAutomationInput,
@@ -38,7 +38,6 @@ export interface PiBuiltinToolsContext {
   sessionId: string
   channelId: string
   modelId?: string
-  agentRuntime?: AgentRuntime
   workspaceId?: string
   workspaceSlug?: string
   permissionMode?: PromaPermissionMode
@@ -79,7 +78,6 @@ function summarizeAutomation(a: import('@proma/shared').Automation, includeHisto
     scheduledAt: a.scheduledAt,
     maxRuns: a.maxRuns,
     runCount: a.runCount ?? 0,
-    agentRuntime: 'pi',
     completedAt: a.completedAt,
     sessionMode: a.sessionMode,
     workspaceId: a.workspaceId,
@@ -135,9 +133,6 @@ function validateScheduleFields(input: Partial<CreateAutomationInput | UpdateAut
   }
   if (input.maxRuns !== undefined && (!isFiniteInt(input.maxRuns) || input.maxRuns < 1)) {
     throw new Error(`非法的 maxRuns: ${String(input.maxRuns)}（应为 ≥1 的整数）`)
-  }
-  if (input.agentRuntime !== undefined && input.agentRuntime !== 'pi') {
-    throw new Error(`非法的 agentRuntime: ${String(input.agentRuntime)}`)
   }
   if (input.sessionMode !== undefined && input.sessionMode !== 'daily' && input.sessionMode !== 'reuse') {
     throw new Error(`非法的 sessionMode: ${String(input.sessionMode)}`)
@@ -199,7 +194,6 @@ function buildAutomationTools(sdk: PiSdk, ctx: PiBuiltinToolsContext): ToolDefin
         scheduledAt: Type.Optional(Type.Number({ description: '一次性任务的绝对触发时间（毫秒时间戳）；scheduleType=once 时必填' })),
         maxRuns: Type.Optional(Type.Number({ description: '最大运行次数上限；达到后任务自动停用' })),
         active: Type.Optional(Type.Boolean({ description: '创建后是否启用，默认 true' })),
-        agentRuntime: Type.Optional(Type.Literal('pi', { description: '运行该任务的 Agent runtime；仅支持 pi' })),
         sessionMode: Type.Optional(Type.Union([Type.Literal('daily'), Type.Literal('reuse')], { description: '会话模式' })),
       }),
       async execute(_toolCallId: string, params: unknown) {
@@ -217,7 +211,6 @@ function buildAutomationTools(sdk: PiSdk, ctx: PiBuiltinToolsContext): ToolDefin
           dayOfMonth: args.dayOfMonth as number | undefined,
           scheduledAt: args.scheduledAt as number | undefined,
           maxRuns: args.maxRuns as number | undefined,
-          agentRuntime: 'pi',
           channelId: ctx.channelId,
           modelId: ctx.modelId,
           workspaceId: ctx.workspaceId,
@@ -268,7 +261,6 @@ function buildAutomationTools(sdk: PiSdk, ctx: PiBuiltinToolsContext): ToolDefin
         scheduledAt: Type.Optional(Type.Number({ description: '新的一次性触发时间（毫秒时间戳）' })),
         maxRuns: Type.Optional(Type.Number({ description: '新的最大运行次数上限' })),
         active: Type.Optional(Type.Boolean({ description: '启用或暂停任务' })),
-        agentRuntime: Type.Optional(Type.Literal('pi', { description: '新的 Agent runtime；仅支持 pi' })),
         sessionMode: Type.Optional(Type.Union([Type.Literal('daily'), Type.Literal('reuse')])),
       }),
       async execute(_toolCallId: string, params: unknown) {
@@ -287,7 +279,6 @@ function buildAutomationTools(sdk: PiSdk, ctx: PiBuiltinToolsContext): ToolDefin
           scheduledAt: args.scheduledAt as number | undefined,
           maxRuns: args.maxRuns as number | undefined,
           active: args.active as boolean | undefined,
-          agentRuntime: args.agentRuntime ? 'pi' : undefined,
           sessionMode: args.sessionMode as 'daily' | 'reuse' | undefined,
         }
         if (input.name !== undefined) assertNonBlank(input.name, 'name')
@@ -379,7 +370,6 @@ export async function buildPiBuiltinTools(
         modelId: ctx.modelId,
         workspaceId: ctx.workspaceId,
         permissionMode: ctx.permissionMode,
-        agentRuntime: ctx.agentRuntime,
         triggeredBy: ctx.triggeredBy,
       })
       tools.push(...collaborationTools as ToolDefinition[])

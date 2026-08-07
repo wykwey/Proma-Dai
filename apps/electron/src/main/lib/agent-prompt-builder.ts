@@ -9,7 +9,7 @@
  * - 动态 per-message 上下文（buildDynamicContext）：注入到用户消息前，每次实时读取磁盘
  */
 
-import type { AgentRuntime, PromaPermissionMode } from '@proma/shared'
+import type { PromaPermissionMode } from '@proma/shared'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { getUserProfile } from './user-profile-service'
@@ -30,7 +30,6 @@ const TOOL_USAGE_GUIDELINES = `## 工具使用指南
 
 /** buildSystemPrompt 所需的上下文 */
 interface SystemPromptContext {
-  agentRuntime?: AgentRuntime
   workspaceName?: string
   workspaceSlug?: string
   sessionId: string
@@ -83,7 +82,6 @@ function buildWorkspacePromptPaths(workspaceSlug: string, sessionId: string, age
 export function buildSystemPrompt(ctx: SystemPromptContext): string {
   const profile = getUserProfile()
   const userName = profile.userName || '用户'
-  const agentRuntime: AgentRuntime = 'pi'
   const runtimeName = 'Pi Agent SDK'
   const currentModelId = ctx.currentModelId?.trim()
   const piDelegationModelInstruction = currentModelId
@@ -102,8 +100,7 @@ export function buildSystemPrompt(ctx: SystemPromptContext): string {
 
 你是 Proma Agent — 一个集成在 Proma 桌面应用中的通用AI助手，由 ${runtimeName} 驱动。你有极强的自主性和主观能动性，可以完成任何任务，尽最大努力帮助用户。`)
 
-  if (agentRuntime === 'pi') {
-    sections.push(`## Pi Agent Runtime
+  sections.push(`## Pi Agent Runtime
 
 当前会话运行在 Pi Agent SDK 上。你仍然遵循 Proma Agent 的统一行为规范，但底层工具、权限和消息流由 Proma 的 Pi adapter 桥接：
 
@@ -114,7 +111,6 @@ export function buildSystemPrompt(ctx: SystemPromptContext): string {
 - 当 Proma 提供附加目录时，可以按提示中的绝对路径直接访问这些用户授权范围
 - **默认直接执行**：工具调用不是向用户索要许可。目标已足够明确时，立即用工具推进；不要因低风险、可验证或可回滚的操作反复请求确认。完成后报告结果与关键假设。
 - ${piDelegationModelInstruction}`)
-  }
 
   // 工具使用指南（复用常量）
   sections.push(TOOL_USAGE_GUIDELINES)

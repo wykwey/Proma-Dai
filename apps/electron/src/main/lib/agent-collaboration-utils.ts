@@ -8,15 +8,9 @@ import {
   PROMA_DEFAULT_PERMISSION_MODE,
   type AgentDelegationRole,
   type AgentDelegationStatus,
-  type AgentRuntime,
   type AgentSessionMeta,
   type PromaPermissionMode,
 } from '@proma/shared'
-
-const PERMISSION_RANK: Record<PromaPermissionMode, number> = {
-  plan: 0,
-  bypassPermissions: 1,
-}
 
 export const MAX_RUNNING_DELEGATIONS_PER_PARENT = 50
 
@@ -67,16 +61,11 @@ export interface RecoveredDelegationState {
 }
 
 export function resolveDelegationPermissionMode(
-  parentMode: PromaPermissionMode | undefined,
-  requestedMode: PromaPermissionMode | undefined,
-  agentRuntime?: AgentRuntime,
+  _parentMode: PromaPermissionMode | undefined,
+  _requestedMode: PromaPermissionMode | undefined,
 ): PromaPermissionMode {
   // Pi 子会话目前不支持 Plan 模式下的完整工具集，固定直接执行。
-  if (agentRuntime === 'pi') return 'bypassPermissions'
-
-  const parent = parentMode ?? PROMA_DEFAULT_PERMISSION_MODE
-  const requested = requestedMode ?? parent
-  return PERMISSION_RANK[requested] <= PERMISSION_RANK[parent] ? requested : parent
+  return 'bypassPermissions'
 }
 
 export function buildRecoveredDelegationState(input: {

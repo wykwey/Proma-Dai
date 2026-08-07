@@ -404,7 +404,6 @@ export type ErrorCode =
   | 'agent_provider_not_supported'
   | 'agent_model_unavailable'
   | 'api_key_decrypt_failed'
-  | 'claude_binary_not_found'
   | 'agent_runtime_not_found'
   | 'workspace_not_found'
   | 'local_project_root_unavailable'
@@ -652,8 +651,6 @@ export interface AgentSessionMeta {
   piSessionFile?: string
   /** Proma assistant UI UUID 到 Pi 树状 session entry ID 的持久映射。 */
   piEntryBindings?: Record<string, string>
-  /** 当前会话使用的 Agent runtime；历史会话缺省为 claude */
-  agentRuntime?: import('./agent-provider').AgentRuntime
   /** ChatGPT Codex Fast Mode 开关；仅 Pi + ChatGPT OAuth 的受支持模型实际生效。 */
   codexFastMode?: boolean
   /** 本会话的推理深度；未设置时兼容旧版全局思考设置。 */
@@ -677,12 +674,6 @@ export interface AgentSessionMeta {
   attachedDirectories?: string[]
   /** 附加的外部文件路径列表（绝对路径，发送时以父目录作为 SDK additionalDirectories） */
   attachedFiles?: string[]
-  /** 分叉来源：源会话的 Proma 工作目录（SDK session 文件在此目录的项目空间中，首次 resume 后清除） */
-  forkSourceDir?: string
-  /** 分叉来源：源会话的 SDK session ID（用于 rewind 时读取源会话的 file-history-snapshot 和备份文件） */
-  forkSourceSdkSessionId?: string
-  /** 回退后的 resume 截断点：下次发消息时传给 SDK resumeSessionAt（消费后清除） */
-  resumeAtMessageUuid?: string
   /** 历史兼容字段：旧版手动保留状态 */
   manualWorking?: boolean
   /** Agent 执行完成但用户尚未清除完成状态 */
@@ -1009,8 +1000,6 @@ export interface AgentSendInput {
   channelId: string
   /** 模型 ID */
   modelId?: string
-  /** 本轮请求使用的 Agent runtime（用于输入区快速切换后的兜底同步） */
-  agentRuntime?: import('./agent-provider').AgentRuntime
   /** 工作区 ID（用于确定 cwd） */
   workspaceId?: string
   /** 附加的外部目录（绝对路径，传递给 SDK additionalDirectories） */
