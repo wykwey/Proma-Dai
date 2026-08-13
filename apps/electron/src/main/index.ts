@@ -86,11 +86,10 @@ import { createTray, destroyTray, getTray } from './tray'
 import { initializeRuntime } from './lib/runtime-init'
 import { seedDefaultSkills } from './lib/config-paths'
 import { upgradeDefaultSkillsInWorkspaces } from './lib/agent-workspace-manager'
-import { hasActiveAgentSessions, stopAllAgents, cleanupAgentRuntimeResources } from './lib/agent-service'
+import { stopAllAgents, cleanupAgentRuntimeResources } from './lib/agent-service'
 import { disposePiMcpConnections } from './lib/adapters/pi-mcp-tools'
 import { markRunningDelegationsAsInterrupted } from './lib/agent-session-manager'
 import { stopAllGenerations } from './lib/chat-service'
-import { configureUpdater, initAutoUpdater, cleanupUpdater } from './lib/updater/auto-updater'
 import { startWorkspaceWatcher, stopWorkspaceWatcher } from './lib/workspace-watcher'
 import { getIsQuitting, setQuitting } from './lib/app-lifecycle'
 import { startScheduler, stopScheduler } from './lib/automation-scheduler'
@@ -424,12 +423,6 @@ async function bootstrap(): Promise<void> {
     safeRun('startWorkspaceWatcher', () => startWorkspaceWatcher(mainWindow!))
   }
 
-  // 自动更新仅在生产环境启用，并由主进程统一检测 Agent 是否空闲。
-  if (app.isPackaged && mainWindow) {
-    configureUpdater(mainWindow, { hasActiveAgents: hasActiveAgentSessions })
-    safeRun('initAutoUpdater', () => initAutoUpdater(mainWindow!))
-  }
-
   // 预创建快速任务窗口（隐藏状态，首次唤起秒开）
   safeRun('createQuickTaskWindow', createQuickTaskWindow)
 
@@ -522,8 +515,6 @@ app.on('before-quit', () => {
   stopAllGenerations()
   // 释放 Pi runtime 的进程内资源。
   cleanupAgentRuntimeResources()
-  // 清理更新器定时器
-  cleanupUpdater()
   // 停止工作区文件监听
   stopWorkspaceWatcher()
   // 停止定时任务调度器

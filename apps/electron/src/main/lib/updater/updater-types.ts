@@ -26,7 +26,7 @@ export interface DownloadProgress {
   bytesPerSecond: number
 }
 
-/** 更新 IPC 通道常量 */
+/** 更新 IPC 通道常量（已停用，保留占位） */
 export const UPDATER_IPC_CHANNELS = {
   CHECK_FOR_UPDATES: 'updater:check',
   GET_STATUS: 'updater:get-status',

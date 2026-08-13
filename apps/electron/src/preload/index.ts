@@ -767,31 +767,6 @@ export interface ElectronAPI {
   /** 设置默认提示词 */
   setDefaultPrompt: (id: string | null) => Promise<void>
 
-  // ===== 自动更新 =====
-
-  /** 更新 API */
-  updater?: {
-    checkForUpdates: () => Promise<void>
-    getStatus: () => Promise<{
-      status: 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'not-available' | 'error'
-      version?: string
-      releaseNotes?: string
-      progress?: { percent: number; transferred: number; total: number; bytesPerSecond: number }
-      error?: string
-    }>
-    onStatusChanged: (callback: (status: {
-      status: 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'not-available' | 'error'
-      version?: string
-      releaseNotes?: string
-      progress?: { percent: number; transferred: number; total: number; bytesPerSecond: number }
-      error?: string
-    }) => void) => () => void
-    /** 在所有运行中的 Agent 结束后重启并安装更新 */
-    installWhenIdle: () => Promise<boolean>
-    /** 取消尚未执行的空闲安装请求 */
-    cancelIdleInstall: () => Promise<void>
-  }
-
   // GitHub Release
   getLatestRelease: () => Promise<GitHubRelease | null>
   listReleases: (options?: GitHubReleaseListOptions) => Promise<GitHubRelease[]>
@@ -1782,19 +1757,6 @@ const electronAPI: ElectronAPI = {
 
   setDefaultPrompt: (id: string | null) => {
     return ipcRenderer.invoke(SYSTEM_PROMPT_IPC_CHANNELS.SET_DEFAULT, id)
-  },
-
-  // 自动更新
-  updater: {
-    checkForUpdates: () => ipcRenderer.invoke('updater:check'),
-    getStatus: () => ipcRenderer.invoke('updater:get-status'),
-    onStatusChanged: (callback) => {
-      const listener = (_event: Electron.IpcRendererEvent, status: Parameters<typeof callback>[0]): void => callback(status)
-      ipcRenderer.on('updater:status-changed', listener)
-      return () => { ipcRenderer.removeListener('updater:status-changed', listener) }
-    },
-    installWhenIdle: () => ipcRenderer.invoke('updater:install-when-idle'),
-    cancelIdleInstall: () => ipcRenderer.invoke('updater:cancel-idle-install'),
   },
 
   // GitHub Release

@@ -90,7 +90,6 @@ import type { UserProfile, AppSettings } from '../types'
 import { getRuntimeStatus, getGitRepoStatus, reinitializeRuntime } from './lib/runtime-init'
 import { getUnstagedChanges, getFileDiff, getUntrackedContent, revertFile, getDiffContents, listWorktrees, getWorktreeChanges, getMainRepoRoot } from './lib/git-diff-service'
 import { registerPromaFilePath } from './lib/local-file-protocol'
-import { registerUpdaterIpc } from './lib/updater/updater-ipc'
 import {
   listChannels,
   createChannel,
@@ -3412,9 +3411,6 @@ export function registerIpcHandlers(): void {
   )
 
   console.log('[IPC] IPC 处理器注册完成')
-
-  // 注册更新 IPC 处理器
-  registerUpdaterIpc()
 
   // 启动时自动归档 + 每 24 小时定期检查
   const runAutoArchive = (): void => {
