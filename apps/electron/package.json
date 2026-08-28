@@ -8,6 +8,7 @@
     "email": "erlichliu@gmail.com"
   },
   "private": true,
+  "homepage": "https://github.com/wykwey/Proma-Dai",
   "type": "module",
   "scripts": {
     "dev": "bun run scripts/dev-kill.ts --vite && concurrently -k -n vite,electron -c blue,green \"bun run dev:vite\" \"bun run dev:electron\"",
@@ -30,12 +31,9 @@
     "generate:icons": "cd resources && ./generate-icons.sh",
     "pack": "bun run build && bun run sync:runtime-deps && electron-builder --dir",
     "dist": "bun run build && bun run sync:runtime-deps && electron-builder",
-    "dist:mac": "bun run build && bun run sync:runtime-deps && electron-builder --mac",
     "dist:win": "bun run build && bun run sync:runtime-deps && electron-builder --win",
     "dist:linux": "bun run build && bun run sync:runtime-deps && electron-builder --linux",
-    "dist:visual": "bun run scripts/dist.ts",
-    "dist:fast": "bun run scripts/dist.ts --current-arch --dmg",
-    "dist:debug": "bun run scripts/dist.ts --current-arch --verbose"
+    "dist:visual": "bun run scripts/dist.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.93.0",

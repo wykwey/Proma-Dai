@@ -4,6 +4,8 @@
 appId: com.proma.app
 productName: Proma
 copyright: Copyright © 2024-2026 Erlich Liu
+publish: null
+artifactName: "${name}-${version}-${arch}.${ext}"
 
 # Electron 版本（CI 环境 bun workspace 下无法自动检测，需显式指定）
 electronVersion: 43.2.0
@@ -76,43 +78,6 @@ extraResources:
       - "**/*"
 
 # ============================================
-# macOS 配置
-# ============================================
-mac:
-  category: public.app-category.developer-tools
-  icon: resources/icon.icns
-  hardenedRuntime: true
-  gatekeeperAssess: false
-  entitlements: resources/entitlements.mac.plist
-  entitlementsInherit: resources/entitlements.mac.plist
-  extendInfo:
-    NSMicrophoneUsageDescription: "Proma 需要访问麦克风，用于将你的语音实时转写为文本。"
-  fileAssociations:
-    - ext: proma-backup
-      name: Proma Personal Backup
-      role: Editor
-    - ext: proma-share
-      name: Proma Share Package
-      role: Editor
-  # 架构由 CLI 参数控制（CI 矩阵分别传 --arm64 / --x64），
-  target:
-    - dmg
-    - zip
-
-# DMG 配置
-dmg:
-  contents:
-    - x: 130
-      y: 220
-    - x: 410
-      y: 220
-      type: link
-      path: /Applications
-  window:
-    width: 540
-    height: 380
-
-# ============================================
 # Windows 配置
 # ============================================
 win:
@@ -137,11 +102,68 @@ nsis:
   createStartMenuShortcut: true
 
 # ============================================
-# 发布配置
-# 每个平台的 build job 通过 --publish always 直接上传到 GitHub Release。
-# electron-builder 会自动创建/复用 Release，并在多架构并行上传时合并 latest-mac.yml。
+# Linux 配置
 # ============================================
-publish:
-  provider: github
-  owner: ErlichLiu
-  repo: Proma
+linux:
+  executableName: proma
+  icon: resources/icon.icns
+  category: Development
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64
+    - target: rpm
+      arch:
+        - x64
+        - arm64
+  fileAssociations:
+    - ext: proma-backup
+      name: Proma Personal Backup
+      role: Editor
+    - ext: proma-share
+      name: Proma Share Package
+      role: Editor
+
+# Deb 配置
+deb:
+  packageName: proma
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libuuid1
+    - libsecret-1-0
+  recommends:
+    - libappindicator3-1
+  priority: optional
+  compression: xz
+
+# RPM 配置
+rpm:
+  packageName: proma
+  depends:
+    - gtk3
+    - libnotify
+    - nss
+    - libXtst
+    - libXScrnSaver
+    - xdg-utils
+    - at-spi2-atk
+    - libuuid
+    - libsecret
+  compression: xz
+
+# AppImage 配置
+appImage:
+  license: LICENSE
+
+# 发布配置已移除 - 产物通过 GitHub Actions Artifacts 保存
