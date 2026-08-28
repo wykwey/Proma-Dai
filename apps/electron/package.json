@@ -8,6 +8,7 @@
     "email": "erlichliu@gmail.com"
   },
   "private": true,
+  "homepage": "https://github.com/wykwey/Proma-Dai",
   "type": "module",
   "scripts": {
     "dev": "bun run scripts/dev-kill.ts --vite && concurrently -k -n vite,electron -c blue,green \"bun run dev:vite\" \"bun run dev:electron\"",
