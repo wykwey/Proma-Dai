@@ -46,7 +46,6 @@ jobs:
 
       - name: 打包 (Windows)
         run: |
-          mkdir -p out/@proma
           npx electron-builder --win --x64
         working-directory: apps/electron
 
@@ -54,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-x64
-          path: apps/electron/out/@proma/*.exe
+          path: apps/electron/out/*.exe
           retention-days: 30
 
   build-linux-x64:
@@ -91,7 +90,6 @@ jobs:
 
       - name: 打包 (Linux x64)
         run: |
-          mkdir -p out/@proma
           npx electron-builder --linux --x64
         working-directory: apps/electron
 
@@ -99,19 +97,19 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-appimage
-          path: apps/electron/out/@proma/*.AppImage
+          path: apps/electron/out/*.AppImage
           retention-days: 30
 
       - name: 上传 deb
         uses: actions/upload-artifact@v4
         with:
           name: linux-deb
-          path: apps/electron/out/@proma/*.deb
+          path: apps/electron/out/*.deb
           retention-days: 30
 
       - name: 上传 rpm
         uses: actions/upload-artifact@v4
         with:
           name: linux-rpm
-          path: apps/electron/out/@proma/*.rpm
+          path: apps/electron/out/*.rpm
           retention-days: 30
