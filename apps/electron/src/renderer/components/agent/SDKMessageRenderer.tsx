@@ -215,18 +215,20 @@ function extractTurnUsage(turnMessages: SDKMessage[]): { durationMs?: number; us
     if (resultMsg.modelUsage) {
       for (const [modelId, info] of Object.entries(resultMsg.modelUsage)) {
         const fallbackModelId = resultMsg._channelModelId ?? modelId
-        const fallbackWindow = resultMsg._channelProvider
-          ? inferProviderContextWindow(fallbackModelId, resultMsg._channelProvider)
-          : inferContextWindow(fallbackModelId)
+        const fallbackWindow = resultMsg._channelContextWindow
+          ?? (resultMsg._channelProvider
+            ? inferProviderContextWindow(fallbackModelId, resultMsg._channelProvider)
+            : inferContextWindow(fallbackModelId))
         const candidate = Math.max(info?.contextWindow ?? 0, fallbackWindow ?? 0) || undefined
         if (candidate && (contextWindow === undefined || candidate > contextWindow)) {
           contextWindow = candidate
         }
       }
     } else {
-      contextWindow = resultMsg._channelProvider
-        ? inferProviderContextWindow(resultMsg._channelModelId, resultMsg._channelProvider)
-        : inferContextWindow(resultMsg._channelModelId)
+      contextWindow = resultMsg._channelContextWindow
+        ?? (resultMsg._channelProvider
+          ? inferProviderContextWindow(resultMsg._channelModelId, resultMsg._channelProvider)
+          : inferContextWindow(resultMsg._channelModelId))
     }
     return {
       durationMs,

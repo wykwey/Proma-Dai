@@ -261,6 +261,15 @@ export interface ChannelModel {
   name: string
   /** 是否启用 */
   enabled: boolean
+  /**
+   * 用户手动指定的最大上下文窗口（token 数）。
+   *
+   * 留空时由运行时按模型 ID 自动推断（见 shared 的 inferProviderContextWindow）。
+   * 该值会作为该模型的 contextWindow 覆盖自动推断结果，用于纠正第三方/自定义
+   * 渠道推断偏差，并决定上下文占用率与自动压缩阈值。手动添加的模型在拉取供应商
+   * 列表时应保留此字段。
+   */
+  contextWindow?: number
   /** 来源标记：手动添加的模型在拉取供应商列表时保留，不会被覆盖清除 */
   source?: 'manual' | 'fetched'
 }

@@ -256,9 +256,9 @@ function payloadToLegacyEvents(payload: AgentStreamPayload): AgentEvent[] {
         // 导致 glm-x-preview[1m] 被识别成 glm-x-preview（200K）。
         const modelName = aMsg._channelModelId ?? aMsg.message.model
         const provider = aMsg._channelProvider
-        const fallbackWindow = provider
-          ? inferProviderContextWindow(modelName, provider)
-          : inferContextWindow(modelName)
+        // 用户在模型配置中手动设置的窗口优先级最高，其次才按模型名推断。
+        const fallbackWindow = aMsg._channelContextWindow
+          ?? (provider ? inferProviderContextWindow(modelName, provider) : inferContextWindow(modelName))
         events.push({
           type: 'usage_update',
           usage: {
@@ -303,6 +303,7 @@ function payloadToLegacyEvents(payload: AgentStreamPayload): AgentEvent[] {
         isSyntheticCompactionResult?: boolean
         _channelModelId?: string
         _channelProvider?: ProviderType
+        _channelContextWindow?: number
       }
       if (rMsg.isSyntheticCompactionResult) {
         return [{
@@ -313,14 +314,16 @@ function payloadToLegacyEvents(payload: AgentStreamPayload): AgentEvent[] {
       // 多 entry 场景（Task 子 Agent 等）：取最大 contextWindow，
       // 避免子 Agent 的小窗口覆盖主模型的大窗口、导致指示器飘忽。
       let contextWindow: number | undefined
-      const fallbackWindow = rMsg._channelProvider
-        ? inferProviderContextWindow(rMsg._channelModelId, rMsg._channelProvider)
-        : inferContextWindow(rMsg._channelModelId)
+      const fallbackWindow = rMsg._channelContextWindow
+        ?? (rMsg._channelProvider
+          ? inferProviderContextWindow(rMsg._channelModelId, rMsg._channelProvider)
+          : inferContextWindow(rMsg._channelModelId))
       if (rMsg.modelUsage) {
         for (const [modelId, info] of Object.entries(rMsg.modelUsage)) {
-          const modelFallbackWindow = rMsg._channelProvider
-            ? inferProviderContextWindow(rMsg._channelModelId ?? modelId, rMsg._channelProvider)
-            : inferContextWindow(rMsg._channelModelId ?? modelId)
+          const modelFallbackWindow = rMsg._channelContextWindow
+            ?? (rMsg._channelProvider
+              ? inferProviderContextWindow(rMsg._channelModelId ?? modelId, rMsg._channelProvider)
+              : inferContextWindow(rMsg._channelModelId ?? modelId))
           const candidate = Math.max(info?.contextWindow ?? 0, modelFallbackWindow ?? 0) || undefined
           if (candidate && (contextWindow === undefined || candidate > contextWindow)) {
             contextWindow = candidate

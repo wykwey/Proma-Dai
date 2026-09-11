@@ -1014,6 +1014,11 @@ export class AgentOrchestrator {
     const accumulatedMessages: SDKMessage[] = []
     // 委派子会话必须继承当前实际运行的模型；未显式传入时与 runtime 的默认值保持一致。
     const selectedModelId = modelId || DEFAULT_MODEL_ID
+    // 用户为当前模型手动配置的最大上下文窗口（模型设置页），存在时覆盖运行时推断。
+    const configuredContextWindow = channel.models.find((m) => m.id === selectedModelId)?.contextWindow
+    const modelContextWindow = configuredContextWindow && configuredContextWindow > 0
+      ? configuredContextWindow
+      : undefined
     let resolvedModel = selectedModelId
     let titleGenerationStarted = false
     /** 捕获到的 SDK session ID（用于 resume / recovery） */
@@ -1421,7 +1426,8 @@ export class AgentOrchestrator {
       }
       const handleContextWindow = (cw: number): void => {
         const inferredWindow = inferProviderContextWindow(modelId, channel.provider)
-        const contextWindow = Math.max(cw, inferredWindow ?? 0) || cw
+        // 用户手动配置的窗口优先；否则沿用「SDK 实测与推断取较大值」策略。
+        const contextWindow = modelContextWindow ?? (Math.max(cw, inferredWindow ?? 0) || cw)
         console.log(`[Agent 编排] 缓存 contextWindow: ${contextWindow}`)
         // result 消息里的真实 contextWindow 透传到 renderer，
         // 覆盖流式过程中按模型名推断的 fallback 值（智谱等端点会把 [1m] 等后缀剥掉，导致 fallback 不准）
@@ -1444,6 +1450,7 @@ export class AgentOrchestrator {
         provider: channel.provider,
         channelId,
         channelName: channel.name,
+        ...(modelContextWindow != null && { contextWindow: modelContextWindow }),
         proxyUrl,
         runtimeEnv,
         ...(maxTurns != null && { maxTurns }),
@@ -1832,6 +1839,9 @@ export class AgentOrchestrator {
                       (msg as Record<string, unknown>)._channelModelId = modelId
                     }
                     ;(msg as Record<string, unknown>)._channelProvider = channel.provider
+                    if (modelContextWindow != null) {
+                      (msg as Record<string, unknown>)._channelContextWindow = modelContextWindow
+                    }
                   }
                   // 为 assistant 消息注入渠道信息，确保持久化后能正确匹配模型显示名与 Agent SDK 窗口
                   if (msg.type === 'assistant') {
@@ -1839,6 +1849,9 @@ export class AgentOrchestrator {
                       (msg as Record<string, unknown>)._channelModelId = modelId
                     }
                     ;(msg as Record<string, unknown>)._channelProvider = channel.provider
+                    if (modelContextWindow != null) {
+                      (msg as Record<string, unknown>)._channelContextWindow = modelContextWindow
+                    }
                   }
                   accumulatedMessages.push(msg)
                 }

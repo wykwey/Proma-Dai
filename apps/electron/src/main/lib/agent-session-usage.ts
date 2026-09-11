@@ -73,8 +73,7 @@ export function getSessionContextUsageRatio(sessionId: string): number | undefin
       if (!result.usage) continue
       const usedTokens = sumUsedTokens(result.usage)
       const contextWindow = pickResultContextWindow(result)
-      return calculateContextUsageRatio(usedTokens, contextWindow)
-    }
+      return calculateContextUsageRatio(usedTokens, contextWindow)    }
 
     if (msg.type === 'assistant') {
       const asst = parsed as SDKAssistantMessage
@@ -82,9 +81,10 @@ export function getSessionContextUsageRatio(sessionId: string): number | undefin
       if (!usage) continue
       const usedTokens = sumUsedTokens(usage)
       const modelId = asst._channelModelId ?? asst.message?.model
-      const contextWindow = asst._channelProvider
-        ? inferProviderContextWindow(modelId, asst._channelProvider)
-        : inferContextWindow(modelId)
+      const contextWindow = asst._channelContextWindow
+        ?? (asst._channelProvider
+          ? inferProviderContextWindow(modelId, asst._channelProvider)
+          : inferContextWindow(modelId))
       return calculateContextUsageRatio(usedTokens, contextWindow)
     }
   }
@@ -108,9 +108,10 @@ function pickResultContextWindow(result: SDKResultMessage): number | undefined {
   let best: number | undefined
   for (const [modelId, info] of Object.entries(result.modelUsage)) {
     const fallbackModelId = result._channelModelId ?? modelId
-    const fallbackWindow = result._channelProvider
-      ? inferProviderContextWindow(fallbackModelId, result._channelProvider)
-      : inferContextWindow(fallbackModelId)
+    const fallbackWindow = result._channelContextWindow
+      ?? (result._channelProvider
+        ? inferProviderContextWindow(fallbackModelId, result._channelProvider)
+        : inferContextWindow(fallbackModelId))
     const win = Math.max(info?.contextWindow ?? 0, fallbackWindow ?? 0) || undefined
     if (win === undefined) continue
     if (best === undefined || win > best) best = win

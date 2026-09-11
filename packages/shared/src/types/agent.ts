@@ -229,6 +229,8 @@ export interface SDKAssistantMessage {
   _channelModelId?: string
   /** 渠道 provider，用于按 Agent SDK 实际运行窗口计算压缩阈值 */
   _channelProvider?: ProviderType
+  /** 用户在模型配置中手动指定的最大上下文窗口；存在时优先于按模型名推断的窗口 */
+  _channelContextWindow?: number
 }
 
 /** SDK user 消息 */
@@ -270,6 +272,8 @@ export interface SDKResultMessage {
   _channelModelId?: string
   /** 渠道 provider，用于按 Agent SDK 实际运行窗口计算压缩阈值 */
   _channelProvider?: ProviderType
+  /** 用户在模型配置中手动指定的最大上下文窗口；存在时优先于 modelUsage/推断的窗口 */
+  _channelContextWindow?: number
 }
 
 /** SDK system 消息（init / compact_boundary / permission_denied / task_started / task_progress / task_notification） */

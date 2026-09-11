@@ -212,7 +212,7 @@ export function convertPiMessage(
   message: AgentMessage,
   sessionId: string,
   channelModelId?: string,
-  options: { final?: boolean; uuid?: string } = {},
+  options: { final?: boolean; uuid?: string; channelContextWindow?: number } = {},
 ): SDKMessage | null {
   const final = options.final ?? true
   if (!message || typeof message !== 'object' || !('role' in message)) return null
@@ -280,6 +280,7 @@ export function convertPiMessage(
         error: { message: assistant.errorMessage, errorType },
       }),
       ...(channelModelId && { _channelModelId: channelModelId }),
+      ...(options.channelContextWindow != null && { _channelContextWindow: options.channelContextWindow }),
     } as unknown as SDKMessage
   }
 

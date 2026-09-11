@@ -30,8 +30,10 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
+  DEFAULT_CONTEXT_WINDOW,
   PROVIDER_DEFAULT_URLS,
   PROVIDER_LABELS,
+  inferProviderContextWindow,
   parseZhipuTeamCredentials,
   parseCodexCredentials,
   parseXaiCredentials,
@@ -196,6 +198,83 @@ function buildZhipuTeamSecret(secret: ZhipuTeamSecretForm): string {
 
 /** auto-save 防抖延迟 */
 const AUTO_SAVE_DELAY = 600
+
+/** 将 token 数量格式化为紧凑展示（如 200K / 1M）。 */
+function formatContextWindowTokens(tokens: number): string {
+  if (!Number.isFinite(tokens) || tokens <= 0) return String(DEFAULT_CONTEXT_WINDOW)
+  if (tokens >= 1_000_000) {
+    const millions = tokens / 1_000_000
+    return `${Number.isInteger(millions) ? millions : millions.toFixed(1)}M`
+  }
+  if (tokens >= 1000) {
+    const thousands = tokens / 1000
+    return `${Number.isInteger(thousands) ? thousands : thousands.toFixed(0)}K`
+  }
+  return String(tokens)
+}
+
+interface ModelContextWindowFieldProps {
+  /** 用户手动指定的窗口（undefined 表示自动推断） */
+  value: number | undefined
+  /** 自动推断的窗口，用作占位与展示 */
+  inferred: number
+  /** 提交手动值；传 undefined 表示恢复自动推断 */
+  onCommit: (value: number | undefined) => void
+}
+
+/**
+ * 模型「最大上下文」行内输入。
+ *
+ * 采用本地草稿 + 失焦/回车提交：避免输入过程中的中间值被 auto-save 持久化，
+ * 留空则清除覆盖、回退到运行时按模型推断。
+ */
+function ModelContextWindowField({ value, inferred, onCommit }: ModelContextWindowFieldProps): React.ReactElement {
+  const committed = value != null ? String(value) : ''
+  const [draft, setDraft] = React.useState(committed)
+  const [focused, setFocused] = React.useState(false)
+
+  // 外部值变化（如拉取模型后重载）且未处于编辑态时同步草稿。
+  React.useEffect(() => {
+    if (!focused) setDraft(committed)
+  }, [committed, focused])
+
+  const commit = (): void => {
+    const trimmed = draft.trim()
+    if (!trimmed) {
+      onCommit(undefined)
+      return
+    }
+    const parsed = Number(trimmed)
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setDraft(committed)
+      return
+    }
+    onCommit(Math.round(parsed))
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[11px] text-muted-foreground whitespace-nowrap">最大上下文</span>
+      <Input
+        inputMode="numeric"
+        value={draft}
+        placeholder={formatContextWindowTokens(inferred)}
+        onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ''))}
+        onFocus={() => setFocused(true)}
+        onBlur={() => { setFocused(false); commit() }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            ;(e.target as HTMLInputElement).blur()
+          }
+        }}
+        className="h-7 w-20 text-xs text-right"
+        title="留空则按模型自动推断；填写后作为该模型的最大上下文（tokens）"
+      />
+      <span className="text-[11px] text-muted-foreground">tokens</span>
+    </div>
+  )
+}
 
 export function ChannelForm({ channel, onSaved, onCancel }: ChannelFormProps): React.ReactElement {
   const isEdit = channel !== null
@@ -490,6 +569,21 @@ export function ChannelForm({ channel, onSaved, onCancel }: ChannelFormProps): R
     )
   }
 
+  /** 设置/清除模型的「最大上下文」手动覆盖（undefined 表示恢复自动推断） */
+  const handleModelContextWindowChange = (modelId: string, contextWindow: number | undefined): void => {
+    setModels((prev) =>
+      prev.map((m) => {
+        if (m.id !== modelId) return m
+        if (contextWindow == null) {
+          const next = { ...m }
+          delete next.contextWindow
+          return next
+        }
+        return { ...m, contextWindow }
+      })
+    )
+  }
+
   /** 发起 ChatGPT (Codex) OAuth 登录：打开浏览器授权，成功后把凭据写入 apiKey */
   const handleCodexLogin = async (): Promise<void> => {
     setCodexLoggingIn(true)
@@ -641,11 +735,13 @@ export function ChannelForm({ channel, onSaved, onCancel }: ChannelFormProps): R
         const manualKept = prev.filter((m) => m.source === 'manual' && !fetchedById.has(m.id))
         const merged = fetchedModels.map((m) => {
           const old = prev.find((p) => p.id === m.id)
+          // 保留用户为该模型手动设置的上下文窗口覆盖
+          const preservedContextWindow = old?.contextWindow != null ? { contextWindow: old.contextWindow } : {}
           // ChatGPT (Codex) 是 SDK 内置的少量精选模型，拉取即全部启用，
           // 与登录自动拉取路径（handleCodexLogin）保持一致，避免新模型（如 gpt-5.6 系列）
           // 默认未启用而沉到「可用模型」折叠区，被误认为"拉不到"。
-          if (isSubscriptionProvider) return { ...m, enabled: true }
-          return old ? { ...m, enabled: old.enabled } : { ...m, enabled: false }
+          if (isSubscriptionProvider) return { ...m, enabled: true, ...preservedContextWindow }
+          return old ? { ...m, enabled: old.enabled, ...preservedContextWindow } : { ...m, enabled: false }
         })
         return [...manualKept, ...merged]
       })
@@ -1066,7 +1162,7 @@ export function ChannelForm({ channel, onSaved, onCancel }: ChannelFormProps): R
       {/* 已启用模型 */}
       <SettingsSection
         title="已启用模型"
-        description={enabledModels.length > 0 ? `${enabledModels.length} 个模型` : undefined}
+        description={enabledModels.length > 0 ? `${enabledModels.length} 个模型 · 可为单个模型设置最大上下文` : undefined}
       >
         <SettingsCard divided={false}>
           {enabledModels.length === 0 ? (
@@ -1075,28 +1171,36 @@ export function ChannelForm({ channel, onSaved, onCancel }: ChannelFormProps): R
             </div>
           ) : (
             <div className="divide-y divide-border/50">
-              {enabledModels.map((model) => (
-                <div
-                  key={model.id}
-                  className="flex items-center gap-2 px-4 py-2.5 group"
-                >
-                  <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0" />
-                  <span className="text-sm text-foreground flex-1">
-                    {model.name}
-                    {model.name !== model.id && (
-                      <span className="text-muted-foreground ml-1">({model.id})</span>
-                    )}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleModel(model.id)}
-                    className="p-0.5 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                    title="取消启用"
+              {enabledModels.map((model) => {
+                const inferred = inferProviderContextWindow(model.id, provider) ?? DEFAULT_CONTEXT_WINDOW
+                return (
+                  <div
+                    key={model.id}
+                    className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-4 py-2.5 group"
                   >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
+                    <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0" />
+                    <span className="text-sm text-foreground flex-1 min-w-0 truncate">
+                      {model.name}
+                      {model.name !== model.id && (
+                        <span className="text-muted-foreground ml-1">({model.id})</span>
+                      )}
+                    </span>
+                    <ModelContextWindowField
+                      value={model.contextWindow}
+                      inferred={inferred}
+                      onCommit={(value) => handleModelContextWindowChange(model.id, value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleToggleModel(model.id)}
+                      className="p-0.5 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                      title="取消启用"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           )}
         </SettingsCard>

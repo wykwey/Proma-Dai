@@ -98,6 +98,12 @@ export interface PiAgentQueryOptions extends AgentQueryInput {
   apiKey: string
   baseUrl?: string
   provider: ProviderType
+  /**
+   * 用户为当前模型手动指定的最大上下文窗口（token 数）。
+   *
+   * 存在时覆盖 catalog / 按模型名推断的 contextWindow，决定上下文占用率与自动压缩阈值。
+   */
+  contextWindow?: number
   /** OAuth credential coordination key; equals the selected Proma channel id. */
   channelId?: string
   channelName?: string
@@ -1573,6 +1579,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
         const converted = convertPiMessage(message, session.sessionId, input.model, {
           final: false,
           uuid,
+          ...(input.contextWindow != null && { channelContextWindow: input.contextWindow }),
         })
         if (converted?.type === 'assistant') queue.push(converted)
       }, PI_PARTIAL_UPDATE_INTERVAL_MS)
@@ -1595,6 +1602,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
                   const converted = convertPiMessage(lastPartialAssistant, session.sessionId, input.model, {
                     final: true,
                     uuid: assistantUuidFor(),
+                    ...(input.contextWindow != null && { channelContextWindow: input.contextWindow }),
                   })
                   if (converted?.type === 'assistant') queue.push(converted)
                 }
@@ -1606,6 +1614,7 @@ export class PiAgentAdapter implements AgentProviderAdapter {
               const converted = convertPiMessage(event.message, session.sessionId, input.model, {
                 final: true,
                 ...(assistantUuid && { uuid: assistantUuid }),
+                ...(input.contextWindow != null && { channelContextWindow: input.contextWindow }),
               })
               const isRetryableAssistantError = isAssistant && (event.message as AssistantMessage).stopReason === 'error'
               if (isRetryableAssistantError && converted?.type === 'assistant' && assistantUuid) {

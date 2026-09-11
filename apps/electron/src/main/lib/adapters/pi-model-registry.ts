@@ -659,11 +659,23 @@ export async function listXaiModels(): Promise<{ id: string; name: string }[]> {
 }
 
 export async function buildModel(sdk: PiSdk, input: PiAgentQueryOptions) {
+  const contextWindowOverride = input.contextWindow && input.contextWindow > 0 ? input.contextWindow : undefined
+  // 用户手动指定的最大上下文优先级最高：覆盖 catalog / 推断出的窗口，
+  // 让 Pi 的自动压缩阈值与用量口径都属于用户配置的真实窗口。
+  const applyContextWindowOverride = <T extends { contextWindow?: number }>(model: T): T => {
+    if (contextWindowOverride == null || model.contextWindow === contextWindowOverride) return model
+    // 保留原型链（catalog/runtime 模型可能是类实例），只覆盖 contextWindow 字段。
+    return Object.assign(Object.create(Object.getPrototypeOf(model) as object), model, {
+      contextWindow: contextWindowOverride,
+    }) as T
+  }
   if (input.provider === 'openai-codex') {
-    return buildCodexModel(sdk, input)
+    const result = await buildCodexModel(sdk, input)
+    return { ...result, model: applyContextWindowOverride(result.model) }
   }
   if (input.provider === 'xai') {
-    return buildXaiModel(sdk, input)
+    const result = await buildXaiModel(sdk, input)
+    return { ...result, model: applyContextWindowOverride(result.model) }
   }
   const providerName = `proma-${input.provider}-${input.sessionId}`
   const resolvedApiKey = resolvePiApiKey(input.provider, input.apiKey)
@@ -703,5 +715,5 @@ export async function buildModel(sdk: PiSdk, input: PiAgentQueryOptions) {
   })
   const model = modelRuntime.getModel(providerName, resolvedModelId ?? 'default')
   if (!model) throw new Error(`Pi model registration failed: ${resolvedModelId ?? 'default'}`)
-  return { modelRuntime, model }
+  return { modelRuntime, model: applyContextWindowOverride(model) }
 }
