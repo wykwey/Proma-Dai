@@ -36,6 +36,7 @@ interface TestAgentSession {
   _isRetryableError: (message: AssistantMessage) => boolean
   _checkCompaction: (message: AssistantMessage) => Promise<boolean>
   _flushPendingBashMessages: () => void
+  _flushPendingCustomMessages: () => void
   _emitAgentSettled: () => Promise<void>
   _runAgentPrompt: (messages: unknown) => Promise<void>
   _prepareRetry: (message: AssistantMessage) => Promise<boolean>
@@ -98,6 +99,7 @@ function createTestSession(settings: NativeRetrySettings): {
   session._isRetryableError = (message) => message.stopReason === 'error'
   session._checkCompaction = async () => false
   session._flushPendingBashMessages = () => {}
+  session._flushPendingCustomMessages = () => {}
   session._emitAgentSettled = async () => {}
 
   return { session, events, getContinueCalls: () => continueCalls }

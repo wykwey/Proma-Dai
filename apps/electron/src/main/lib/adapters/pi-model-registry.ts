@@ -9,6 +9,7 @@ import {
   CODEX_GPT_54_55_CONTEXT_WINDOW,
   CODEX_GPT_54_MINI_CONTEXT_WINDOW,
   CODEX_GPT_56_CONTEXT_WINDOW,
+  PROVIDER_DEFAULT_URLS,
   extractZhipuCodingTeamApiToken,
   inferProviderContextWindow,
   inferCodexAlignedGPT5ContextWindow,
@@ -343,6 +344,62 @@ function candidatePiProviders(provider: ProviderType): KnownProvider[] {
   }
 }
 
+/**
+ * 判断两个端点是否同一 host（忽略路径差异）。
+ */
+function isSameEndpointHost(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false
+  try {
+    return new URL(a).host === new URL(b).host
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 判断是否继承 catalog 条目声明的 transport 级能力（compat）。
+ *
+ * 规则只有一条：**catalog 条目的 compat 只对它自己声明的 transport 与端点成立**。
+ * 所以要求渠道的 api 与端点都跟 catalog 条目一致：
+ *
+ * - 端点不一致 → 排除中转/自定义渠道（baseUrl 是 relay，不是 api.anthropic.com）。
+ *   实测 geek2api：继承 `supportsMidConvoEffort` 后 pi-ai 会把 `role:"system"` 的消息
+ *   插进 `messages[]` 中间，中转站直接 400；同渠道不继承则 200 正常。
+ * - api 不一致 → 排除跨协议继承（moonshotai / zai / deepseek 目录是
+ *   `openai-completions`，而 Proma 把这些渠道注册为 `anthropic-messages`）。
+ *
+ * 任一条件不满足就退回修复前行为（不继承）：宁可少能力，也不发不出去的请求。
+ */
+export function shouldInheritCatalogCompat(
+  provider: ProviderType,
+  catalog: { api?: string; baseUrl?: string } | undefined,
+  channelBaseUrl: string | undefined,
+): boolean {
+  if (!catalog?.api || !catalog.baseUrl) return false
+  if (catalog.api !== normalizePiApi(provider)) return false
+  return isSameEndpointHost(channelBaseUrl, catalog.baseUrl)
+}
+
+/**
+ * 渠道端点是否为用户自配（非该 provider 的官方地址）。
+ *
+ * `custom` / `anthropic-compatible` 这类渠道没有官方端点（默认值为空串），一律视为自配。
+ * 用户自配端点无法假设其 SSE 行为合规：实测 geek2api 的流式响应在 pi 侧拿不到
+ * finish_reason，而 pi 默认 `supportsFinishReason: true`（含义是“必须有，缺失即视为
+ * 流被截断并报错”）会直接失败（`Stream ended without finish_reason`）；
+ * 置 `false` 后 pi 会按内容推断 stop / toolUse。
+ *
+ * 代价：这一类渠道会失去“用缺 finish_reason 检测流被截断”的能力。只对自配端点放宽，
+ * 官方端点仍然保持严格检查。
+ */
+export function usesUserSuppliedEndpoint(
+  provider: ProviderType,
+  baseUrl: string | undefined,
+): boolean {
+  const canonicalBaseUrl = PROVIDER_DEFAULT_URLS[provider]
+  return !canonicalBaseUrl || !isSameEndpointHost(baseUrl, canonicalBaseUrl)
+}
+
 function findCatalogModelById(models: readonly PiCatalogModel[], modelId: string): PiCatalogModel | undefined {
   const normalized = modelId.toLowerCase()
   return models.find((model) =>
@@ -466,11 +523,18 @@ async function resolvePiModelDefaults(input: PiAgentQueryOptions): Promise<PiMod
     && input.model?.toLowerCase() === 'glm-5.2'
   const catalogContextWindow = catalogModel?.contextWindow ?? DEFAULT_CONTEXT_WINDOW
   const inferredContextWindow = inferProviderContextWindow(input.model, input.provider) ?? DEFAULT_CONTEXT_WINDOW
+  // catalog 的 compat 只在“渠道家族与 catalog 来源一致”时继承，避免中转渠道误用
+  // 第一方 transport 能力；Proma 专属 profile 始终优先于 catalog。
+  const inheritedCompat = shouldInheritCatalogCompat(input.provider, catalogModel, input.baseUrl)
+    ? catalogModel?.compat
+    : undefined
   return {
     reasoning: catalogModel?.reasoning ?? true,
     thinkingLevelMap: providerSpecificCapabilities?.thinkingLevelMap
       ?? catalogModel?.thinkingLevelMap,
-    compat: providerSpecificCapabilities?.compat,
+    compat: (inheritedCompat || providerSpecificCapabilities?.compat)
+      ? { ...inheritedCompat, ...providerSpecificCapabilities?.compat }
+      : undefined,
     input: catalogModel ? [...catalogModel.input] : ['text', 'image'],
     cost: catalogModel ? { ...catalogModel.cost } : { ...ZERO_MODEL_COST },
     // Codex 对齐策略优先；其他模型仍保留 catalog 与 shared inference 中更大的已验证能力。
@@ -692,6 +756,8 @@ export async function buildModel(sdk: PiSdk, input: PiAgentQueryOptions) {
   const compat = {
     ...modelDefaults.compat,
     ...(supportsPiDeveloperRole(input.provider) ? {} : { supportsDeveloperRole: false }),
+    // 自配端点不假设 SSE 会合并 finish_reason，交给 pi 按内容推断而不是直接报错。
+    ...(usesUserSuppliedEndpoint(input.provider, input.baseUrl) ? { supportsFinishReason: false } : {}),
   }
   modelRuntime.registerProvider(providerName, {
     name: input.channelName ?? providerName,

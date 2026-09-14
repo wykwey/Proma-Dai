@@ -3,6 +3,8 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, w
 import * as os from 'node:os'
 import { join } from 'node:path'
 
+import { RESERVED_BUILTIN_KEYS } from './builtin-mcp/baseline'
+
 type AgentWorkspaceManager = typeof import('./agent-workspace-manager')
 type ConfigPathsModule = typeof import('./config-paths')
 
@@ -64,6 +66,13 @@ function writeWorkspaceSkill(workspaceSlug: string, skillSlug: string, name: str
 
 describe('Agent 工作区 MCP 配置', () => {
   test('Given 工作区 MCP 包含内置保留名 When 归一化配置 Then 剔除冲突项并保留普通服务器', () => {
+    // 保留名同时存在 id 形式（automation）与运行时 name 形式（chrome_devtools，
+    // default-mcp.json 里 name 必须下划线安全），两种 key 都要被剔除。
+    // 先断言目录现状：内置项增删后这里会明确报错，而不是让下面的过滤断言静默失效
+    // （历史坑：曾硬编码 nano_banana，该内置项下线后测试断言与管理器实现脱节）。
+    expect(RESERVED_BUILTIN_KEYS.has('automation')).toBe(true)
+    expect(RESERVED_BUILTIN_KEYS.has('chrome_devtools')).toBe(true)
+
     const normalized = manager.normalizeWorkspaceMcpConfig({
       servers: {
         automation: {
@@ -71,9 +80,9 @@ describe('Agent 工作区 MCP 配置', () => {
           command: 'custom-automation',
           enabled: true,
         },
-        nano_banana: {
+        chrome_devtools: {
           type: 'stdio',
-          command: 'custom-nano',
+          command: 'custom-chrome-devtools',
           enabled: true,
         },
         github: {

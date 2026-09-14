@@ -79,6 +79,14 @@ extraResources:
     to: proma-logos
     filter:
       - "**/*"
+  # 应用窗口图标（BrowserWindow.icon）。asar 内的 dist/resources 被 files 规则排除，
+  # 故必须显式输出到 process.resourcesPath 根目录，getIconPath() 才能解析到。
+  - from: resources/icon.png
+    to: icon.png
+  - from: resources/icon.ico
+    to: icon.ico
+  - from: resources/icon.icns
+    to: icon.icns
 
 # ============================================
 # Windows 配置

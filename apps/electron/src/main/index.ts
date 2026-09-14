@@ -182,16 +182,22 @@ function showAndFocusMainWindow(): void {
  * Get the appropriate app icon path for the current platform
  */
 function getIconPath(): string {
-  // resources 在 build:resources 阶段被复制到 dist/ 下，与 main.cjs 同级
-  const resourcesDir = join(__dirname, 'resources')
+  const iconFile =
+    process.platform === 'darwin'
+      ? 'icon.icns'
+      : process.platform === 'win32'
+        ? 'icon.ico'
+        : 'icon.png'
 
-  if (process.platform === 'darwin') {
-    return join(resourcesDir, 'icon.icns')
-  } else if (process.platform === 'win32') {
-    return join(resourcesDir, 'icon.ico')
-  } else {
-    return join(resourcesDir, 'icon.png')
-  }
+  // dev: build:resources 把 resources/ 拷到 dist/ 下，与 main.cjs 同级（__dirname/resources）。
+  // packaged: dist/resources 被 electron-builder 的 `!dist/resources/**` 排除，asar 内不存在，
+  //           图标改由 extraResources 输出到 process.resourcesPath 根目录。
+  // 故 packaged 下优先 process.resourcesPath，并保留 __dirname/resources 回退以兼容旧产物。
+  const candidates = app.isPackaged
+    ? [join(process.resourcesPath, iconFile), join(__dirname, 'resources', iconFile)]
+    : [join(__dirname, 'resources', iconFile)]
+
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]!
 }
 
 function saveMainWindowState(): void {
