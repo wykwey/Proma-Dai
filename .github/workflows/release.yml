@@ -171,6 +171,11 @@ jobs:
         run: |
           npx electron-builder --linux --arm64
         working-directory: apps/electron
+        env:
+          # app-builder 内置的 fpm 只有 x86 / x86_64 两个包，在 arm64 上会退回 32 位
+          # x86 版本，运行时报 "cannot execute binary file: Exec format error"。
+          # 改为使用上面 `gem install fpm` 装的系统 fpm（deb 与 rpm 都会走它）。
+          USE_SYSTEM_FPM: "true"
 
       - name: 上传 AppImage
         uses: actions/upload-artifact@v4
