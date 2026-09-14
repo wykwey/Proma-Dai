@@ -21,6 +21,16 @@ directories:
 # 压缩配置
 compression: normal
 
+# Electron 语言包：默认会把 55 种 locale 全打进安装包（未压缩 46MB / xz 后约 7.6MB）。
+# Electron 在缺少系统语言包时会回退 en-US，应用自身的 i18n 不受影响，因此只保留实际
+# 面向的语言即可。需要新增语言时在这里补。
+electronLanguages:
+  - en-US
+  - zh-CN
+  - zh-TW
+  - ja
+  - ko
+
 # ASAR 打包配置
 # 启用 ASAR 归档，将 Pi native addon 解压到 app.asar.unpacked/ 避免路径问题
 asar: true
@@ -57,10 +67,17 @@ files:
   - "!node_modules/@earendil-works/*/examples/**"
   - "!node_modules/@earendil-works/*/docs/**"
   - "!node_modules/@earendil-works/**/*.map"
+  # 排除 musl 变体原生包。Electron 官方二进制本身就依赖 glibc，deb/rpm/AppImage/
+  # dmg/nsis 都用不上 musl（@napi-rs/canvas 的 musl Skia 单文件就 30MB，xz 后 ~9MB）。
+  # sync-runtime-deps 已按目标平台过滤，这里再兜一层，防止本地 node_modules 混入。
+  - "!**/*-musl/**"
 
 # 通用额外资源
 extraResources:
-  # proma CLI 自包含二进制（build:cli 用 bun build --compile 产出到 resources/bin/）。
+  # proma CLI 运行时（build:cli 产出到 resources/bin/）：
+  # - 非 Windows：proma-cli.cjs + proma 包装脚本（用 Electron 的 Node 模式运行，
+  #   不再单独打包一份 Bun 运行时，见 scripts/build-cli.ts）
+  # - Windows：proma.exe 自包含二进制（WSL 只能执行 PE 可执行文件）
   # 运行时由主进程注入 PROMA_CLI 环境变量，暴露给 skill / Agent 调用。
   - from: resources/bin
     to: bin
@@ -123,19 +140,16 @@ linux:
   executableName: proma
   icon: resources/icon.icns
   category: Development
+  # 刻意不写 arch 数组：不指定时 electron-builder 按宿主架构打包。
+  # 交叉架构打包会产出「杂交包」（Electron 本体是目标架构，但 node_modules 里的
+  # 原生依赖与 CLI 仍是宿主架构）——0.16.11 的 arm64 包就是这样，里面的 canvas
+  # Skia 与 CLI 与 amd64 包逐字节相同，既白占 ~17MB 也加载不了。
+  # arm64 产物由 .github/workflows/release.yml 的 linux-arm64 job 在同架构 runner
+  # 上用 `electron-builder --linux --arm64` 显式构建。
   target:
-    - target: AppImage
-      arch:
-        - x64
-        - arm64
-    - target: deb
-      arch:
-        - x64
-        - arm64
-    - target: rpm
-      arch:
-        - x64
-        - arm64
+    - AppImage
+    - deb
+    - rpm
   fileAssociations:
     - ext: proma-backup
       name: Proma Personal Backup

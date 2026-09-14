@@ -397,20 +397,30 @@ export function getDefaultSkillsDir(): string {
 }
 
 /**
- * 获取打包进 App 的 proma CLI 二进制路径。
+ * 获取打包进 App 的 proma CLI 入口路径。
  *
  * 打包模式下从 process.resourcesPath/bin 取（electron-builder extraResources 注入）。
- * 开发模式下没有编译二进制——返回 undefined，由调用方回退到源码运行
+ * 0.16.12 起非 Windows 平台该目录里是构建期生成的包装脚本 `proma`（用 Electron 的
+ * Node 模式跑 proma-cli.cjs，见 scripts/build-cli.ts）；Windows 优先用自包含的
+ * proma.exe（WSL 只能执行 PE 可执行文件），并以 proma.cmd 兜底。
+ *
+ * 开发模式下没有编译产物——返回 undefined，由调用方回退到源码运行
  * （bun apps/cli/src/index.ts）。
  *
- * @returns 二进制绝对路径；不存在时返回 undefined
+ * @returns CLI 入口绝对路径；不存在时返回 undefined
  */
 export function getBundledCliPath(): string | undefined {
   const { app } = require('electron')
   if (!app.isPackaged) return undefined
-  const binName = process.platform === 'win32' ? 'proma.exe' : 'proma'
-  const cliPath = join(process.resourcesPath, 'bin', binName)
-  return existsSync(cliPath) ? cliPath : undefined
+  const binDir = join(process.resourcesPath, 'bin')
+  const candidates = process.platform === 'win32'
+    ? ['proma.exe', 'proma.cmd']
+    : ['proma']
+  for (const name of candidates) {
+    const cliPath = join(binDir, name)
+    if (existsSync(cliPath)) return cliPath
+  }
+  return undefined
 }
 
 /**

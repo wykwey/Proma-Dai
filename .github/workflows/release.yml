@@ -44,6 +44,13 @@ jobs:
         run: bun run electron:build
         working-directory: .
 
+      # 同步主进程 external 运行时依赖到 apps/electron/node_modules。
+      # 该步骤会按目标平台过滤原生依赖变体（见 scripts/sync-runtime-deps.ts），
+      # 避免把 musl / 其他平台的原生库一起打进安装包。
+      - name: 同步主进程运行时依赖
+        run: bun run --filter='@proma/electron' sync:runtime-deps
+        working-directory: .
+
       - name: 打包 (Windows)
         run: |
           npx electron-builder --win --x64
@@ -88,6 +95,11 @@ jobs:
         run: bun run electron:build
         working-directory: .
 
+      # 同步主进程 external 运行时依赖（带平台过滤，见 scripts/sync-runtime-deps.ts）
+      - name: 同步主进程运行时依赖
+        run: bun run --filter='@proma/electron' sync:runtime-deps
+        working-directory: .
+
       - name: 打包 (Linux x64)
         run: |
           npx electron-builder --linux --x64
@@ -111,5 +123,72 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-rpm
+          path: apps/electron/out/*.rpm
+          retention-days: 30
+
+  # arm64 必须在同架构 runner 上构建：交叉打出来的包是「杂交包」
+  # （Electron 本体是 arm64，但 node_modules 里的原生依赖与 CLI 仍是 x64，
+  # 既占体积也加载不了）。见 apps/electron/scripts/sync-runtime-deps.ts 的注释。
+  # 注：GitHub 托管的 arm64 runner 目前仅对公开仓库提供。
+  build-linux-arm64:
+    name: build (ubuntu-24.04-arm, linux, arm64, --linux --arm64)
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 安装 Linux 构建依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev rpm
+          sudo gem install fpm
+
+      - name: 安装依赖
+        run: bun install --frozen-lockfile
+
+      # 构建应用
+      - name: 构建 Electron 应用
+        run: bun run electron:build
+        working-directory: .
+
+      # 在 arm64 宿主上同步，才能拿到 arm64 的原生依赖变体
+      - name: 同步主进程运行时依赖
+        run: bun run --filter='@proma/electron' sync:runtime-deps
+        working-directory: .
+
+      - name: 打包 (Linux arm64)
+        run: |
+          npx electron-builder --linux --arm64
+        working-directory: apps/electron
+
+      - name: 上传 AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-appimage
+          path: apps/electron/out/*.AppImage
+          retention-days: 30
+
+      - name: 上传 deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-deb
+          path: apps/electron/out/*.deb
+          retention-days: 30
+
+      - name: 上传 rpm
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-rpm
           path: apps/electron/out/*.rpm
           retention-days: 30
