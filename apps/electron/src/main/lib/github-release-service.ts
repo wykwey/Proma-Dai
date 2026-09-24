@@ -12,10 +12,10 @@ import type {
 /** GitHub API 基础 URL */
 const GITHUB_API_BASE = 'https://api.github.com'
 
-/** GitHub 仓库配置（从 electron-builder.yml） */
+/** GitHub 仓库配置（本仓库，用于版本历史与新版本检测） */
 const GITHUB_REPO = {
-  owner: 'ErlichLiu',
-  repo: 'Proma',
+  owner: 'wykwey',
+  repo: 'Proma-Dai',
 }
 
 /** Release 缓存 */
