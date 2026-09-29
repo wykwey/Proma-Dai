@@ -89,6 +89,8 @@ import { upgradeDefaultSkillsInWorkspaces } from './lib/agent-workspace-manager'
 import { stopAllAgents, cleanupAgentRuntimeResources } from './lib/agent-service'
 import { disposePiMcpConnections } from './lib/adapters/pi-mcp-tools'
 import { markRunningDelegationsAsInterrupted } from './lib/agent-session-manager'
+import { disposeJsonlWorker } from './lib/jsonl-worker-client'
+import { disposeDocumentWorker } from './lib/document-parser'
 import { stopAllGenerations } from './lib/chat-service'
 import { startWorkspaceWatcher, stopWorkspaceWatcher } from './lib/workspace-watcher'
 import { getIsQuitting, setQuitting } from './lib/app-lifecycle'
@@ -531,6 +533,9 @@ app.on('before-quit', () => {
   destroyQuickTaskWindow()
   // 关闭 Pi MCP 桥接连接（释放 stdio 子进程）
   disposePiMcpConnections().catch(() => {})
+  // 终止解析 worker 线程（会话 JSONL / 文档解析）
+  disposeJsonlWorker()
+  disposeDocumentWorker()
   // Clean up system tray before quitting
   destroyTray()
 })

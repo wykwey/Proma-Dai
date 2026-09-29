@@ -91,8 +91,8 @@ function extractSDKToolSummary(content: Array<{ type: string; name?: string; inp
  * 当 resume 不可用时，将最近消息拼接为上下文注入 prompt，
  * 让新 SDK 会话保留对话记忆。包含文本内容和工具活动摘要。
  */
-export function buildContextPrompt(sessionId: string, currentUserMessage: string, sessionHint?: SessionPromptHint): string {
-  const allMessages = getAgentSessionSDKMessages(sessionId)
+export async function buildContextPrompt(sessionId: string, currentUserMessage: string, sessionHint?: SessionPromptHint): Promise<string> {
+  const allMessages = await getAgentSessionSDKMessages(sessionId)
   if (allMessages.length === 0) return currentUserMessage
 
   // 排除最后一条（当前用户消息，刚刚才 append 的）

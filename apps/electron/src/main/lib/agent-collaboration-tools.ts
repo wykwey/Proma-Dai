@@ -313,13 +313,14 @@ function extractTextFromSdkMessage(message: SDKMessage): string[] {
   return parts
 }
 
-function summarizeChildResult(childSessionId: string, messages?: AgentMessage[]): string {
+async function summarizeChildResult(childSessionId: string, messages?: AgentMessage[]): Promise<string> {
   const lastAssistant = [...(messages ?? [])]
     .reverse()
     .find((message) => message.role === 'assistant' && message.content.trim().length > 0)
   if (lastAssistant) return truncateText(lastAssistant.content.trim(), RESULT_SUMMARY_CHAR_LIMIT)
 
-  const sdkMessages = getAgentSessionSDKMessages(childSessionId)
+  // 回退路径：消息不在手上时读子会话 JSONL。走 worker，避免长会话同步解析卡主进程。
+  const sdkMessages = await getAgentSessionSDKMessages(childSessionId)
   const sdkTexts: string[] = []
   for (const message of sdkMessages) {
     sdkTexts.push(...extractTextFromSdkMessage(message))
@@ -390,7 +391,7 @@ function listKnownDelegations(parentSessionId: string): Array<Record<string, unk
   return [...live, ...persisted]
 }
 
-function getDelegationResult(parentSessionId: string, delegationId: string): Record<string, unknown> {
+async function getDelegationResult(parentSessionId: string, delegationId: string): Promise<Record<string, unknown>> {
   const live = delegations.get(delegationId)
   if (live) {
     if (live.parentSessionId !== parentSessionId) {
@@ -405,7 +406,7 @@ function getDelegationResult(parentSessionId: string, delegationId: string): Rec
   }
 
   const resultSummary = session.delegationStatus && session.delegationStatus !== 'running'
-    ? summarizeChildResult(session.id)
+    ? await summarizeChildResult(session.id)
     : undefined
 
   return {
@@ -506,7 +507,7 @@ interface WaitResolution {
  * 不在内存的委派回退到持久化记录（重启后遗留），已终态则直接计入完成。
  * 两处都查不到才抛错。
  */
-function resolveWaitTargets(ids: string[], parentSessionId: string): WaitResolution {
+async function resolveWaitTargets(ids: string[], parentSessionId: string): Promise<WaitResolution> {
   const liveRecords: DelegationRecord[] = []
   const settled: Array<Record<string, unknown>> = []
   for (const id of ids) {
@@ -519,7 +520,7 @@ function resolveWaitTargets(ids: string[], parentSessionId: string): WaitResolut
       continue
     }
     // 不在内存：回退到持久化记录；getDelegationResult 在完全找不到时抛错
-    settled.push(getDelegationResult(parentSessionId, id))
+    settled.push(await getDelegationResult(parentSessionId, id))
   }
   return { liveRecords, settled }
 }
@@ -591,12 +592,12 @@ function getAvailableAgentModels(ctx: CollaborationToolContext): Record<string, 
   }
 }
 
-function stopDelegation(parentSessionId: string, delegationId: string): Record<string, unknown> {
+async function stopDelegation(parentSessionId: string, delegationId: string): Promise<Record<string, unknown>> {
   const record = delegations.get(delegationId)
   if (!record) {
     // 不在内存：可能是应用重启后的遗留委派。回退到持久化记录（完全找不到才抛错），无法主动停止
     return {
-      delegation: getDelegationResult(parentSessionId, delegationId),
+      delegation: await getDelegationResult(parentSessionId, delegationId),
       stopped: false,
       note: '该委派不在当前运行内存中（可能因应用重启已中断），无法主动停止。',
     }
@@ -701,9 +702,9 @@ function startDelegation(
       onError: (error) => {
         markDelegationFinished(record, 'failed', { error })
       },
-      onComplete: (messages) => {
+      onComplete: async (messages) => {
         if (record.status !== 'running') return
-        const resultSummary = summarizeChildResult(child.id, messages)
+        const resultSummary = await summarizeChildResult(child.id, messages)
         markDelegationFinished(record, 'completed', { resultSummary })
       },
       onTitleUpdated: (updatedTitle) => {
@@ -789,7 +790,7 @@ export function buildPiCollaborationTools(
           }
         })
         return piJsonResult({
-          delegation: getDelegationResult(ctx.sessionId, result.delegationId),
+          delegation: await getDelegationResult(ctx.sessionId, result.delegationId),
           effectivePermissionMode: result.effectivePermissionMode,
           effectiveModelId: result.effectiveModelId,
           note: '子会话已启动。需要结果时调用 wait_for_delegations。',
@@ -835,7 +836,7 @@ export function buildPiCollaborationTools(
           return { created, failures }
         })
         return piJsonResult({
-          delegations: batch.created.map((item) => getDelegationResult(ctx.sessionId, item.delegationId)),
+          delegations: await Promise.all(batch.created.map((item) => getDelegationResult(ctx.sessionId, item.delegationId))),
           effectivePermissionModes: batch.created.map((item) => ({
             delegationId: item.delegationId,
             permissionMode: item.effectivePermissionMode,
@@ -868,7 +869,7 @@ export function buildPiCollaborationTools(
           : Array.from(delegations.values())
             .filter((item) => item.parentSessionId === ctx.sessionId && item.status === 'running')
             .map((item) => item.delegationId)
-        const { liveRecords, settled } = resolveWaitTargets(ids, ctx.sessionId)
+        const { liveRecords, settled } = await resolveWaitTargets(ids, ctx.sessionId)
         const totalTargets = liveRecords.length + settled.length
         if (totalTargets === 0) {
           return piJsonResult({ delegations: [], note: '没有找到可等待的协作委派' })
@@ -921,7 +922,7 @@ export function buildPiCollaborationTools(
       async execute(_toolCallId: string, params: unknown) {
         const args = params as { delegationIds: string[] }
         return piJsonResult({
-          delegations: args.delegationIds.map((delegationId) => getDelegationResult(ctx.sessionId, delegationId)),
+          delegations: await Promise.all(args.delegationIds.map((delegationId) => getDelegationResult(ctx.sessionId, delegationId))),
         })
       },
     }),
@@ -934,7 +935,7 @@ export function buildPiCollaborationTools(
       }),
       async execute(_toolCallId: string, params: unknown) {
         const args = params as { delegationId: string }
-        return piJsonResult(stopDelegation(ctx.sessionId, args.delegationId))
+        return piJsonResult(await stopDelegation(ctx.sessionId, args.delegationId))
       },
     }),
     sdk.defineTool({
@@ -947,7 +948,7 @@ export function buildPiCollaborationTools(
       async execute(_toolCallId: string, params: unknown) {
         const args = params as { delegationIds: string[] }
         return piJsonResult({
-          results: args.delegationIds.map((delegationId) => stopDelegation(ctx.sessionId, delegationId)),
+          results: await Promise.all(args.delegationIds.map((delegationId) => stopDelegation(ctx.sessionId, delegationId))),
         })
       },
     }),
@@ -1046,9 +1047,9 @@ export function buildPiCollaborationTools(
             onError: (error) => {
               markDelegationFinished(record, 'failed', { error })
             },
-            onComplete: (messages) => {
+            onComplete: async (messages) => {
               if (record.status !== 'running') return
-              const resultSummary = summarizeChildResult(record.childSessionId, messages)
+              const resultSummary = await summarizeChildResult(record.childSessionId, messages)
               markDelegationFinished(record, 'completed', { resultSummary })
             },
             onTitleUpdated: () => {},

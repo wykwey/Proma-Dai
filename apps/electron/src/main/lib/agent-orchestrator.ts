@@ -1139,7 +1139,7 @@ export class AgentOrchestrator {
         ? '/compact'
         : existingSdkSessionId
           ? contextualMessage
-          : buildContextPrompt(sessionId, contextualMessage, { agentCwd, workspaceSlug })
+          : (await buildContextPrompt(sessionId, contextualMessage, { agentCwd, workspaceSlug }))
 
       if (existingSdkSessionId) {
         console.log(`[Agent 编排] 使用 resume 模式，SDK session ID: ${existingSdkSessionId}`)
@@ -1576,7 +1576,7 @@ export class AgentOrchestrator {
               const wasStoppedByUser = this.consumeStoppedByUser(sessionId)
               this.persistSDKMessages(sessionId, accumulatedMessages, Date.now() - queryStartedAt)
               try { updateAgentSessionMeta(sessionId, { stoppedByUser: wasStoppedByUser }) } catch { /* 会话可能已删除 */ }
-              completeRun(getAgentSessionMessages(sessionId), { stoppedByUser: wasStoppedByUser, startedAt: streamStartedAt })
+              completeRun((await getAgentSessionMessages(sessionId)), { stoppedByUser: wasStoppedByUser, startedAt: streamStartedAt })
               return
             }
           }
@@ -1813,7 +1813,7 @@ export class AgentOrchestrator {
                 // 透传归一化后的错误消息到前端，避免 SDK 原始 API Error 直接暴露给用户。
                 this.eventBus.emit(sessionId, { kind: 'sdk_message', message: errorSDKMsg })
                 try { updateAgentSessionMeta(sessionId, {}) } catch { /* 忽略 */ }
-                completeRun(getAgentSessionMessages(sessionId), { startedAt: streamStartedAt })
+                completeRun((await getAgentSessionMessages(sessionId)), { startedAt: streamStartedAt })
                 return
               }
             }
@@ -1926,7 +1926,7 @@ export class AgentOrchestrator {
                 // 轻量完成：UI 置空闲可输入，但 host 保持运行态（不 releaseActiveRun、不 break、不启动 drain 超时），
                 // while 循环继续 park 在 queryIterator.next()，等待后台任务完成时 SDK 自动 yield 的新一轮消息。
                 awaitingBackgroundWake = true
-                idleComplete(getAgentSessionMessages(sessionId), { startedAt: streamStartedAt, resultSubtype: capturedResultSubtype, resultErrors: capturedResultErrors })
+                idleComplete((await getAgentSessionMessages(sessionId)), { startedAt: streamStartedAt, resultSubtype: capturedResultSubtype, resultErrors: capturedResultErrors })
               } else if (!keepChannelOpen && !drainTimeoutPromise) {
                 // 启动 drain 超时安全网：正常情况下 adapter 收到 terminal result 会主动 break
                 // 触发 iterator.return → 下一次 next() 立即返回 done，此 timeout 不会触发。
@@ -1977,7 +1977,7 @@ export class AgentOrchestrator {
 
           if (!wasStoppedByUser && visibleRunMessageCount === 0) {
             const errorContent = this.persistEmptyResponseError(sessionId, capturedResultSubtype, capturedResultErrors)
-            failRun(errorContent, getAgentSessionMessages(sessionId), {
+            failRun(errorContent, (await getAgentSessionMessages(sessionId)), {
               startedAt: streamStartedAt,
               resultSubtype: EMPTY_RESPONSE_RESULT_SUBTYPE,
               resultErrors: [errorContent],
@@ -1995,7 +1995,7 @@ export class AgentOrchestrator {
           }
 
           // 发送完成信号
-          completeRun(getAgentSessionMessages(sessionId), { stoppedByUser: wasStoppedByUser, startedAt: streamStartedAt, resultSubtype: capturedResultSubtype, resultErrors: capturedResultErrors })
+          completeRun((await getAgentSessionMessages(sessionId)), { stoppedByUser: wasStoppedByUser, startedAt: streamStartedAt, resultSubtype: capturedResultSubtype, resultErrors: capturedResultErrors })
 
           break  // 成功完成，退出重试循环
 
@@ -2016,7 +2016,7 @@ export class AgentOrchestrator {
             this.persistSDKMessages(sessionId, accumulatedMessages, Date.now() - queryStartedAt)
             // 持久化中断状态到会话 meta
             try { updateAgentSessionMeta(sessionId, { stoppedByUser: wasStoppedByUser }) } catch { /* 会话可能已删除 */ }
-            completeRun(getAgentSessionMessages(sessionId), { stoppedByUser: wasStoppedByUser, startedAt: streamStartedAt })
+            completeRun((await getAgentSessionMessages(sessionId)), { stoppedByUser: wasStoppedByUser, startedAt: streamStartedAt })
             return
           }
 
@@ -2192,7 +2192,7 @@ export class AgentOrchestrator {
             })
           }
 
-          failRun(userFacingError, getAgentSessionMessages(sessionId), { startedAt: streamStartedAt })
+          failRun(userFacingError, (await getAgentSessionMessages(sessionId)), { startedAt: streamStartedAt })
 
           // 保留 sdkSessionId，确保下一轮能继续 resume（修复 #903）。
           // 此终止分支只会被「非 session-not-found」的错误命中（session 失效已在上文
@@ -2239,7 +2239,7 @@ export class AgentOrchestrator {
         } as unknown as SDKMessage
         appendSDKMessages(sessionId, [retryErrorSDKMsg])
 
-        failRun(`${retryFailureMessage}: ${lastRetryableError}`, getAgentSessionMessages(sessionId), { startedAt: streamStartedAt })
+        failRun(`${retryFailureMessage}: ${lastRetryableError}`, (await getAgentSessionMessages(sessionId)), { startedAt: streamStartedAt })
       }
 
     } finally {

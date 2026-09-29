@@ -230,7 +230,7 @@ export async function sendMessage(
   }
 
   // 3. 先读取历史消息（在追加用户消息之前，避免 adapter 重复发送当前消息）
-  const fullHistory = getConversationMessages(conversationId)
+  const fullHistory = await getConversationMessages(conversationId)
 
   // 4. 追加用户消息到 JSONL
   const userMsg: ChatMessage = {

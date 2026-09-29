@@ -17,6 +17,7 @@ import {
 } from './config-paths'
 import { deleteConversationAttachments, deleteAttachment } from './attachment-service'
 import type { ConversationMeta, ChatMessage, RecentMessagesResult, MessageSearchResult } from '@proma/shared'
+import { readChatMessagesInWorker, readRecentChatMessagesInWorker } from './jsonl-worker-client'
 
 /**
  * 对话索引文件格式
@@ -101,12 +102,9 @@ export function createConversation(
 /**
  * 读取对话的所有消息
  *
- * 逐行读取 JSONL 文件，解析每行为 ChatMessage。
- *
- * @param id 对话 ID
- * @returns 消息列表
+ * 走 worker 解析 JSONL：长对话可达几十 MB，同步解析会冻结主进程事件循环。
  */
-export function getConversationMessages(id: string): ChatMessage[] {
+export async function getConversationMessages(id: string): Promise<ChatMessage[]> {
   const filePath = getConversationMessagesPath(id)
 
   if (!existsSync(filePath)) {
@@ -114,10 +112,7 @@ export function getConversationMessages(id: string): ChatMessage[] {
   }
 
   try {
-    const raw = readFileSync(filePath, 'utf-8')
-    const lines = raw.split('\n').filter((line) => line.trim())
-
-    return lines.map((line) => JSON.parse(line) as ChatMessage)
+    return await readChatMessagesInWorker(filePath)
   } catch (error) {
     console.error(`[对话管理] 读取消息失败 (${id}):`, error)
     return []
@@ -134,7 +129,7 @@ export function getConversationMessages(id: string): ChatMessage[] {
  * @param limit 返回的最大消息数
  * @returns 最近的消息列表 + 总数 + 是否还有更多
  */
-export function getRecentMessages(id: string, limit: number): RecentMessagesResult {
+export async function getRecentMessages(id: string, limit: number): Promise<RecentMessagesResult> {
   const filePath = getConversationMessagesPath(id)
 
   if (!existsSync(filePath)) {
@@ -142,20 +137,7 @@ export function getRecentMessages(id: string, limit: number): RecentMessagesResu
   }
 
   try {
-    const raw = readFileSync(filePath, 'utf-8')
-    const lines = raw.split('\n').filter((line) => line.trim())
-    const total = lines.length
-
-    // 如果总数不超过 limit，直接返回全部
-    if (total <= limit) {
-      const messages = lines.map((line) => JSON.parse(line) as ChatMessage)
-      return { messages, total, hasMore: false }
-    }
-
-    // 只解析尾部 limit 行
-    const recentLines = lines.slice(-limit)
-    const messages = recentLines.map((line) => JSON.parse(line) as ChatMessage)
-    return { messages, total, hasMore: true }
+    return await readRecentChatMessagesInWorker(filePath, limit)
   } catch (error) {
     console.error(`[对话管理] 读取最近消息失败 (${id}):`, error)
     return { messages: [], total: 0, hasMore: false }
@@ -291,8 +273,8 @@ export function deleteConversation(id: string): void {
  * @param messageId 要删除的消息 ID
  * @returns 更新后的消息列表
  */
-export function deleteMessage(conversationId: string, messageId: string): ChatMessage[] {
-  const messages = getConversationMessages(conversationId)
+export async function deleteMessage(conversationId: string, messageId: string): Promise<ChatMessage[]> {
+  const messages = await getConversationMessages(conversationId)
   const targetMessage = messages.find((msg) => msg.id === messageId)
   const filtered = messages.filter((msg) => msg.id !== messageId)
 
@@ -324,12 +306,12 @@ export function deleteMessage(conversationId: string, messageId: string): ChatMe
  * @param preserveFirstMessageAttachments 是否保留起点消息的附件文件
  * @returns 截断后的消息列表（起点之前的消息）
  */
-export function truncateMessagesFrom(
+export async function truncateMessagesFrom(
   conversationId: string,
   messageId: string,
   preserveFirstMessageAttachments = false,
-): ChatMessage[] {
-  const messages = getConversationMessages(conversationId)
+): Promise<ChatMessage[]> {
+  const messages = await getConversationMessages(conversationId)
   const startIndex = messages.findIndex((msg) => msg.id === messageId)
 
   if (startIndex === -1) {

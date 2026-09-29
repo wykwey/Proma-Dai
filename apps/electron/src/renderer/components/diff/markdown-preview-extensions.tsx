@@ -14,7 +14,7 @@ import { createRoot } from 'react-dom/client'
 import type { Root } from 'react-dom/client'
 import DOMPurify from 'dompurify'
 import katex from 'katex'
-import { highlightCode, highlightToTokens, getDisplayName } from '@proma/core'
+import { highlightToTokens, getDisplayName } from '@proma/core'
 import { MermaidBlock } from '@proma/ui'
 import type { HighlightTokensResult } from '@proma/core'
 import type { FileAccessOptions } from '@proma/shared'
@@ -48,8 +48,18 @@ const shikiCodeBlockPluginKey = new PluginKey<ShikiDecorationState>('markdownShi
 const codeBlockRenderModePluginKey = new PluginKey<CodeBlockRenderModeState>('markdownCodeBlockRenderMode')
 const SHIKI_REFRESH_META = 'markdownShikiCodeBlockRefresh'
 const CODE_BLOCK_RENDER_MODE_META = 'markdownCodeBlockRenderModeRefresh'
-const SHIKI_TOKEN_CACHE_LIMIT = 160
+
+/**
+ * Shiki token 缓存。
+ *
+ * 高亮计算已经搬到 worker（异步），这里只缓存「已算好」的结果：
+ * - 装饰构建是同步的，先用缓存把颜色画出来
+ * - 未命中的代码块先按纯文本渲染，同时登记异步补算，算完再刷新装饰
+ * 这样首次 mount 不再有数百次同步 tokenize 阻塞主线程。
+ */
 const shikiTokenCache = new Map<string, HighlightTokensResult>()
+const shikiTokenPending = new Set<string>()
+const SHIKI_TOKEN_CACHE_LIMIT = 160
 
 function normalizeCodeLanguage(language: unknown): string {
   const value = typeof language === 'string' ? language.trim() : ''
@@ -128,32 +138,67 @@ function serializeCodeBlock(state: MarkdownSerializerLike, node: ProseMirrorNode
   state.closeBlock(node)
 }
 
-function shouldLoadShikiLanguage(requestedLanguage: string, actualLanguage: string): boolean {
-  return requestedLanguage !== 'text' && actualLanguage === 'text'
+function shikiCacheKey(theme: string, language: string, code: string): string {
+  return `${theme}\u0000${language}\u0000${code}`
 }
 
-function getCachedShikiTokens(code: string, language: string, theme: string): HighlightTokensResult | null {
-  const key = `${theme}\u0000${language}\u0000${code}`
-  if (shikiTokenCache.has(key)) {
-    const cached = shikiTokenCache.get(key) ?? null
-    shikiTokenCache.delete(key)
-    if (cached) shikiTokenCache.set(key, cached)
-    return cached
-  }
+/** 读缓存（同步）：命中时刷新 LRU 顺序 */
+function readCachedShikiTokens(code: string, language: string, theme: string): HighlightTokensResult | null {
+  const key = shikiCacheKey(theme, language, code)
+  const cached = shikiTokenCache.get(key)
+  if (!cached) return null
+  shikiTokenCache.delete(key)
+  shikiTokenCache.set(key, cached)
+  return cached
+}
 
-  const result = highlightToTokens({ code, language, theme })
-  if (!result || shouldLoadShikiLanguage(language, result.language)) return result
-
+function writeShikiTokenCache(code: string, language: string, theme: string, result: HighlightTokensResult): void {
+  const key = shikiCacheKey(theme, language, code)
   shikiTokenCache.set(key, result)
   if (shikiTokenCache.size > SHIKI_TOKEN_CACHE_LIMIT) {
     const oldestKey = shikiTokenCache.keys().next().value
     if (oldestKey) shikiTokenCache.delete(oldestKey)
   }
-  return result
 }
 
-function buildShikiDecorations(doc: ProseMirrorNode, theme: string): DecorationSet {
+/**
+ * 异步补算 token（worker）。
+ * 返回是否真的写入了缓存——调用方据此决定要不要重新刷新装饰；
+ * 全部失败时不刷新，否则会陷入「请求失败 → 重建装饰 → 又请求」的死循环。
+ */
+async function requestShikiTokens(code: string, language: string, theme: string): Promise<boolean> {
+  const key = shikiCacheKey(theme, language, code)
+  if (shikiTokenCache.has(key) || shikiTokenPending.has(key)) return false
+
+  shikiTokenPending.add(key)
+  try {
+    const result = await highlightToTokens({ code, language, theme })
+    if (!result) return false
+    writeShikiTokenCache(code, language, theme, result)
+    return true
+  } catch (error) {
+    console.error('[MarkdownRichEditor] Shiki 高亮失败:', error)
+    return false
+  } finally {
+    shikiTokenPending.delete(key)
+  }
+}
+
+interface MissingShikiRequest {
+  code: string
+  language: string
+}
+
+/**
+ * 用缓存同步构建装饰；缓存未命中的代码块登记为 missing，由调用方异步补算后再次刷新。
+ */
+function buildShikiDecorations(
+  doc: ProseMirrorNode,
+  theme: string,
+): { decorations: DecorationSet; missing: MissingShikiRequest[] } {
   const decorations: Decoration[] = []
+  const missing: MissingShikiRequest[] = []
+  const requested = new Set<string>()
 
   doc.descendants((node, pos) => {
     if (node.type.name !== 'codeBlock') return true
@@ -162,8 +207,16 @@ function buildShikiDecorations(doc: ProseMirrorNode, theme: string): DecorationS
     if (!code) return false
 
     const language = normalizeCodeLanguage(node.attrs.language)
-    const result = getCachedShikiTokens(code, language, theme)
-    if (!result) return false
+    const result = readCachedShikiTokens(code, language, theme)
+    if (!result) {
+      // 同一份代码可能出现在多个代码块，按缓存 key 去重，避免重复请求 worker
+      const key = shikiCacheKey(theme, language, code)
+      if (!requested.has(key)) {
+        requested.add(key)
+        missing.push({ code, language })
+      }
+      return false
+    }
 
     let offset = 0
     result.lines.forEach((line, lineIndex) => {
@@ -182,60 +235,20 @@ function buildShikiDecorations(doc: ProseMirrorNode, theme: string): DecorationS
     return false
   })
 
-  return DecorationSet.create(doc, decorations)
-}
-
-function requestMissingShikiLanguages(view: EditorView, theme: string, pending: Set<string>): void {
-  // 同一文档可能含多个相同 language 的代码块，先按 language 去重再判定，
-  // 避免重复同步调用 highlightToTokens（每个 codeBlock 一次）。
-  const languages = new Set<string>()
-  view.state.doc.descendants((node) => {
-    if (node.type.name !== 'codeBlock') return true
-    languages.add(normalizeCodeLanguage(node.attrs.language))
-    return false
-  })
-
-  const requests: Array<Promise<void>> = []
-  for (const language of languages) {
-    const syncResult = highlightToTokens({ code: ' ', language, theme })
-    if (syncResult && !shouldLoadShikiLanguage(language, syncResult.language)) continue
-
-    const key = `${theme}:${language}`
-    if (pending.has(key)) continue
-
-    pending.add(key)
-    requests.push(
-      highlightCode({ code: ' ', language, theme })
-        .then(() => {})
-        .catch((error) => console.error('[MarkdownRichEditor] Shiki 高亮失败:', error))
-        .finally(() => pending.delete(key)),
-    )
-  }
-
-  if (requests.length === 0) return
-
-  Promise.all(requests)
-    .then(() => {
-      if (!view.isDestroyed) {
-        view.dispatch(view.state.tr.setMeta(SHIKI_REFRESH_META, true))
-      }
-    })
-    .catch(() => {})
+  return { decorations: DecorationSet.create(doc, decorations), missing }
 }
 
 function createShikiDecorationsPlugin(themeRef: ThemeRef): Plugin<ShikiDecorationState> {
   return new Plugin<ShikiDecorationState>({
     key: shikiCodeBlockPluginKey,
     state: {
-      // 首次 mount 不在同步路径跑 Shiki tokenize（含数百次 highlightToTokens 调用），
-      // 让出主线程；首帧装饰由 view 启动时通过 SHIKI_REFRESH_META 异步事务触发。
+      // 首次 mount 不在同步路径跑 Shiki tokenize：装饰只读缓存，未命中的先渲染纯文本。
       init: () => ({ decorations: DecorationSet.empty }),
-      apply: (tr, previous, _oldState, newState) => {
-        // 仅当 view 层调度的 refresh 事务到来时才重算。文档变更不直接重算——
-        // 重算是 O(全部 codeBlock × 全部 token) 的同步操作，每次按键都跑会卡住编辑器。
-        if (tr.getMeta(SHIKI_REFRESH_META)) {
-          return { decorations: buildShikiDecorations(newState.doc, themeRef.current) }
-        }
+      apply: (tr, previous) => {
+        // view 层刷新事务直接带上构建好的装饰，避免在 apply 里重复构建。
+        // 文档变更不直接重算——重算是 O(全部 codeBlock × 全部 token) 的操作，每次按键都跑会卡住编辑器。
+        const next = tr.getMeta(SHIKI_REFRESH_META) as DecorationSet | undefined
+        if (next) return { decorations: next }
         // 普通事务（按键/光标移动）：让旧装饰跟随位置 mapping，几乎无开销。
         return { decorations: previous.decorations.map(tr.mapping, tr.doc) }
       },
@@ -244,29 +257,48 @@ function createShikiDecorationsPlugin(themeRef: ThemeRef): Plugin<ShikiDecoratio
       decorations: (state) => shikiCodeBlockPluginKey.getState(state)?.decorations ?? DecorationSet.empty,
     },
     view: (view) => {
-      const pending = new Set<string>()
       let lastRequestedTheme = themeRef.current
       let scheduleHandle: ReturnType<typeof setTimeout> | null = null
+      let disposed = false
 
-      const scheduleRefresh = (currentView: EditorView, delayMs: number): void => {
+      /**
+       * 同步用缓存刷新装饰；随后对未命中的代码块发起 worker 补算，算完再刷新一次。
+       * 补算是异步且不阻塞主线程的，因此可以放心地对整篇文档的代码块并发登记。
+       */
+      const refreshDecorations = (currentView: EditorView, theme: string): void => {
+        if (currentView.isDestroyed) return
+
+        const { decorations, missing } = buildShikiDecorations(currentView.state.doc, theme)
+        currentView.dispatch(currentView.state.tr.setMeta(SHIKI_REFRESH_META, decorations))
+        if (missing.length === 0) return
+
+        Promise.all(missing.map((item) => requestShikiTokens(item.code, item.language, theme)))
+          .then((applied) => {
+            if (disposed || currentView.isDestroyed) return
+            // 有新增缓存才刷新：全部失败时不再刷新，避免死循环
+            if (applied.some(Boolean)) refreshDecorations(currentView, theme)
+          })
+          .catch(() => {})
+      }
+
+      const scheduleRefresh = (currentView: EditorView, delayMs: number, theme: string): void => {
         if (scheduleHandle !== null) clearTimeout(scheduleHandle)
         scheduleHandle = setTimeout(() => {
           scheduleHandle = null
           if (currentView.isDestroyed) return
-          requestMissingShikiLanguages(currentView, themeRef.current, pending)
-          currentView.dispatch(currentView.state.tr.setMeta(SHIKI_REFRESH_META, true))
+          refreshDecorations(currentView, theme)
         }, delayMs)
       }
 
-      // 首次 mount：异步触发首次装饰构建（不阻塞）。
-      scheduleRefresh(view, 0)
+      // 首次 mount：异步触发首次装饰构建（缓存命中直接上色，未命中的先渲染纯文本）。
+      scheduleRefresh(view, 0, themeRef.current)
 
       return {
         update: (nextView, previousState) => {
           const currentTheme = themeRef.current
           const themeChanged = currentTheme !== lastRequestedTheme
           const docChanged = previousState.doc !== nextView.state.doc
-          // 仅 selection 变化不触发：光标移动既不影响装饰内容，也不会引入新语言。
+          // 仅 selection 变化不触发：光标移动既不影响装饰内容，也不会引入新代码。
           if (!themeChanged && !docChanged) return
 
           lastRequestedTheme = currentTheme
@@ -276,14 +308,14 @@ function createShikiDecorationsPlugin(themeRef: ThemeRef): Plugin<ShikiDecoratio
               clearTimeout(scheduleHandle)
               scheduleHandle = null
             }
-            requestMissingShikiLanguages(nextView, currentTheme, pending)
-            nextView.dispatch(nextView.state.tr.setMeta(SHIKI_REFRESH_META, true))
+            refreshDecorations(nextView, currentTheme)
           } else {
-            // 文档变更：120ms 节流，避免连续按键期间反复全量重算。
-            scheduleRefresh(nextView, 120)
+            // 文档变更：120ms 节流，避免连续按键期间反复重建装饰。
+            scheduleRefresh(nextView, 120, currentTheme)
           }
         },
         destroy: () => {
+          disposed = true
           if (scheduleHandle !== null) {
             clearTimeout(scheduleHandle)
             scheduleHandle = null

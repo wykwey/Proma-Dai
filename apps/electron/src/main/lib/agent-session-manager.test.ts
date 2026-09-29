@@ -118,14 +118,14 @@ afterAll(() => {
 })
 
 describe('Agent 会话 JSONL 读取', () => {
-  test('Given 会话 JSONL 混入损坏行 When 读取 SDKMessage Then 跳过坏行并保留其它消息', () => {
+  test('Given 会话 JSONL 混入损坏行 When 读取 SDKMessage Then 跳过坏行并保留其它消息', async () => {
     writeAgentSessionJsonl('session-with-bad-line', [
       JSON.stringify({ type: 'user', message: { content: [{ type: 'text', text: '你好' }] }, parent_tool_use_id: null }),
       '{ 这不是合法 JSON',
       JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: '仍然可读' }] }, parent_tool_use_id: null }),
     ])
 
-    const messages = manager.getAgentSessionSDKMessages('session-with-bad-line')
+    const messages = await manager.getAgentSessionSDKMessages('session-with-bad-line')
 
     expect(messages.map((message) => message.type)).toEqual(['user', 'assistant'])
   })

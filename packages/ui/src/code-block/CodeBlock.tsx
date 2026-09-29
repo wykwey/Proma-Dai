@@ -1,14 +1,14 @@
 /**
  * CodeBlock - 代码块组件
  *
- * 提供语法高亮（Shiki）、语言标签和复制按钮。
+ * 提供语法高亮（Shiki / Web Worker）、语言标签和复制按钮。
  * 用于 react-markdown 的 pre 元素自定义渲染。
  *
- * 流式渲染策略（类 Cherry Studio 方案）：
- * 1. 使用 highlightToTokens 获取结构化 token，逐行渲染为 React 元素
- * 2. 稳定的行级 key → React reconciliation 只更新变化/新增的行
- * 3. 节流 80ms → 避免每个 token 都触发高亮计算
- * 4. 首次挂载异步初始化 → 后续全部同步
+ * 流式渲染策略：
+ * 1. 高亮计算在 worker 中完成，主线程只渲染；高亮未就绪时先渲染纯文本
+ * 2. 每个代码块一个稳定 blockId，worker 内部按行增量 tokenize（只重算最后一行 + 新增行）
+ * 3. worker 只回传变化行，React 用稳定行级 key 做最小更新
+ * 4. 节流 80ms + 「同一份 code 只请求一次」短路 → 避免重复请求与高频重算
  *
  * 结构：
  * ┌─────────────────────────────────────────┐
@@ -20,8 +20,16 @@
  */
 
 import * as React from 'react'
-import { getDisplayName, highlightToTokens, onHighlighterReady } from '@proma/core'
-import type { HighlightToken, HighlightTokensResult } from '@proma/core'
+import {
+  getDisplayName,
+  highlightToTokensIncremental,
+  releaseHighlightBlock,
+} from '@proma/core'
+import type {
+  HighlightIncrementalResult,
+  HighlightToken,
+  HighlightTokensResult,
+} from '@proma/core'
 
 /** react-markdown 传入的 <code> 元素 props */
 interface CodeElementProps {
@@ -80,6 +88,178 @@ function extractCodeInfo(children: React.ReactNode): { language: string; code: s
   }
 }
 
+// ===== 高亮状态 Hook =====
+
+interface HighlightState {
+  displayed: HighlightTokensResult | null
+  /** 最近一次「已发出请求」的 code 指纹：同一次 render 内多处触发也只请求一次 */
+  sentKey: string
+  /** 是否已有请求在途：请求串行化，保证增量结果能安全合并 */
+  inFlight: boolean
+  timer: ReturnType<typeof setTimeout> | null
+  lastFlushAt: number
+  disposed: boolean
+  /** 脱节重试标记，避免无限重试 */
+  retried: boolean
+}
+
+/**
+ * 订阅某个代码块的增量高亮结果。
+ *
+ * 关键不变量：
+ * - 同一份 (language, code) 只会发起一次请求（sentKey 短路），彻底消除旧实现里
+ *   「初始化 + effect 同步路径 + 定时器」对同一份 code 的 2~3 次重复计算
+ * - 请求严格串行（inFlight），因此 worker 返回的「变化行区间」总是相对上一次已应用结果，
+ *   客户端保留前 startLine 行 + 追加即可
+ */
+function useIncrementalHighlight(blockId: string, code: string, language: string): HighlightTokensResult | null {
+  const [result, setResult] = React.useState<HighlightTokensResult | null>(null)
+  const stateRef = React.useRef<HighlightState>({
+    displayed: null,
+    sentKey: '',
+    inFlight: false,
+    timer: null,
+    lastFlushAt: 0,
+    disposed: false,
+    retried: false,
+  })
+
+  // 最新待高亮内容放在 ref 里：flush 是异步的，必须读取「发起请求那一刻」的最新值
+  const latestRef = React.useRef({ code, language })
+  latestRef.current = { code, language }
+
+  function applyResult(response: HighlightIncrementalResult): void {
+    const state = stateRef.current
+    if (state.disposed) return
+
+    const previous = state.displayed
+    const canMerge = response.startLine > 0
+      && !!previous
+      && previous.language === response.language
+      && previous.lines.length >= response.startLine
+
+    if (response.startLine > 0 && !canMerge) {
+      // 客户端缓存与 worker 增量状态脱节（理论上不会发生，因为请求串行且每次都应用结果）：
+      // 重置 worker 侧状态后重取一次全量，避免把变化行拼到错误的前缀上
+      if (!state.retried) {
+        state.retried = true
+        state.sentKey = ''
+        releaseHighlightBlock(blockId)
+        flush()
+        return
+      }
+      // 重试后仍无法合并：退回纯文本渲染（宁可暂不上色，也不能渲染错行）
+      state.retried = false
+      state.displayed = null
+      setResult(null)
+      return
+    }
+
+    state.retried = false
+    const next: HighlightTokensResult = canMerge
+      ? {
+          lines: (previous as HighlightTokensResult).lines.slice(0, response.startLine).concat(response.lines),
+          bgColor: response.bgColor,
+          fgColor: response.fgColor,
+          language: response.language,
+        }
+      : {
+          lines: response.lines,
+          bgColor: response.bgColor,
+          fgColor: response.fgColor,
+          language: response.language,
+        }
+
+    state.displayed = next
+    setResult(next)
+  }
+
+  function flush(): void {
+    const state = stateRef.current
+    if (state.disposed) return
+
+    const { code: latestCode, language: latestLanguage } = latestRef.current
+    const key = `${latestLanguage}\u0000${latestCode}`
+
+    // 去重：同一份 code 已请求过就直接短路（流式重复 render 不会重复请求）
+    if (key === state.sentKey) return
+    // 串行化：等上一次响应应用完再发下一次，保证 startLine 语义成立
+    if (state.inFlight) return
+
+    state.sentKey = key
+    state.inFlight = true
+    state.lastFlushAt = Date.now()
+
+    void (async () => {
+      let response: HighlightIncrementalResult | null = null
+      try {
+        response = await highlightToTokensIncremental(blockId, { code: latestCode, language: latestLanguage })
+      } catch (error) {
+        // 服务层已经内部吞掉失败并返回 null，这里只是兜底，避免未处理的 rejection
+        console.error('[CodeBlock] 高亮请求失败:', error)
+      } finally {
+        state.inFlight = false
+      }
+      if (state.disposed) return
+      if (response) applyResult(response)
+
+      // 响应期间 code 又变了：补一次（仍受节流约束）
+      if (`${latestRef.current.language}\u0000${latestRef.current.code}` !== state.sentKey) {
+        schedule()
+      }
+    })()
+  }
+
+  function schedule(): void {
+    const state = stateRef.current
+    if (state.disposed || state.timer) return
+
+    // 已经请求过同一份 (language, code)：不必再排期，避免无意义的定时器
+    const { code: latestCode, language: latestLanguage } = latestRef.current
+    if (`${latestLanguage}\u0000${latestCode}` === state.sentKey) return
+
+    const elapsed = Date.now() - state.lastFlushAt
+    if (elapsed >= THROTTLE_MS) {
+      flush()
+      return
+    }
+    state.timer = setTimeout(() => {
+      state.timer = null
+      flush()
+    }, THROTTLE_MS - elapsed)
+  }
+
+  React.useEffect(() => {
+    // StrictMode（开发模式）会执行「挂载 → 卸载 → 再挂载」，而 ref 在这一次模拟卸载中不会被重置。
+    // 因此每次 effect 启动都要把 disposed 复位，并清空 sentKey 以便重新发起一次请求，
+    // 否则模拟卸载期间的响应会被丢弃、后续 flush 又被 sentKey 短路，导致颜色永远上不去。
+    const state = stateRef.current
+    state.disposed = false
+    state.sentKey = ''
+    schedule()
+    // 依赖只取 blockId：其余状态都在 ref 中，schedule/flush 读取最新值
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blockId])
+
+  React.useEffect(() => {
+    schedule()
+    // 依赖只取 code/language：其余状态都在 ref 中，schedule/flush 读取最新值
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, language])
+
+  React.useEffect(() => {
+    return () => {
+      const state = stateRef.current
+      state.disposed = true
+      if (state.timer) clearTimeout(state.timer)
+      // 通知 worker 释放该 blockId 的增量状态，避免长会话内存持续增长
+      releaseHighlightBlock(blockId)
+    }
+  }, [blockId])
+
+  return result
+}
+
 // ===== SVG 图标路径常量 =====
 
 const ICON_ATTRS = {
@@ -131,9 +311,9 @@ const CodeLine = React.memo(function CodeLine({ tokens, rawLine }: CodeLineProps
  * CodeBlock 代码块组件
  *
  * 渲染策略：
- * - 逐行渲染：highlightToTokens → 每行独立 React 元素 + 稳定 key
- * - 节流 80ms：流式输出时控制重计算频率
- * - 异步兜底：首次挂载高亮器未就绪时，异步初始化后触发一次更新
+ * - 逐行渲染：worker 返回 token → 每行独立 React 元素 + 稳定 key
+ * - 节流 80ms：流式输出时控制请求频率
+ * - 渐进增强：worker 首次响应前渲染纯文本，响应后再补上颜色
  */
 export function CodeBlock({ children, onCopy }: CodeBlockProps): React.ReactElement {
   const { language, code } = React.useMemo(() => extractCodeInfo(children), [children])
@@ -143,57 +323,9 @@ export function CodeBlock({ children, onCopy }: CodeBlockProps): React.ReactElem
   const langOrText = language || 'text'
   const rawLines = React.useMemo(() => trimmedCode.split('\n'), [trimmedCode])
 
-  // ---- 节流 token 高亮 ----
-  const [tokenResult, setTokenResult] = React.useState<HighlightTokensResult | null>(
-    () => highlightToTokens({ code: trimmedCode, language: langOrText })
-  )
-  const pendingCodeRef = React.useRef(trimmedCode)
-  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastUpdateRef = React.useRef(Date.now())
-
-  pendingCodeRef.current = trimmedCode
-
-  React.useEffect(() => {
-    const now = Date.now()
-    const elapsed = now - lastUpdateRef.current
-
-    const doHighlight = () => {
-      const currentCode = pendingCodeRef.current
-      const result = highlightToTokens({ code: currentCode, language: langOrText })
-      if (result) {
-        lastUpdateRef.current = Date.now()
-        setTokenResult(result)
-      }
-    }
-
-    // 同步路径可用时
-    const syncResult = highlightToTokens({ code: trimmedCode, language: langOrText })
-    if (syncResult) {
-      if (elapsed >= THROTTLE_MS) {
-        // 距上次更新已超过节流间隔，立即执行
-        lastUpdateRef.current = now
-        setTokenResult(syncResult)
-      } else if (!timerRef.current) {
-        // 安排延迟执行，确保最终状态正确
-        timerRef.current = setTimeout(() => {
-          timerRef.current = null
-          doHighlight()
-        }, THROTTLE_MS - elapsed)
-      }
-      return
-    }
-
-    // 兜底：高亮器尚未初始化，订阅就绪事件，初始化完成后用同步路径上色
-    const unsubscribe = onHighlighterReady(() => doHighlight())
-    return () => unsubscribe()
-  }, [trimmedCode, langOrText])
-
-  // 清理节流定时器
-  React.useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [])
+  // 组件实例级稳定 id：worker 用它维护增量状态，跨 render 不变
+  const blockId = React.useId()
+  const tokenResult = useIncrementalHighlight(blockId, trimmedCode, langOrText)
 
   // 复制到剪贴板
   const handleCopy = React.useCallback(async () => {
@@ -204,7 +336,7 @@ export function CodeBlock({ children, onCopy }: CodeBlockProps): React.ReactElem
     } catch (error) {
       console.error('[CodeBlock] 复制失败:', error)
     }
-  }, [trimmedCode])
+  }, [trimmedCode, onCopy])
 
   return (
     <div className="code-block-wrapper group/code rounded-lg overflow-hidden my-2 border border-border/50">

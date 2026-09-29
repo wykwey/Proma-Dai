@@ -44,6 +44,8 @@ import { migratePermissionMode } from '@proma/shared'
 import { getConversationMessages } from './conversation-manager'
 // 旧格式 → SDKMessage 的转换逻辑下沉到 @proma/session-core 作为唯一真源，避免主进程与渲染层各存一份。
 import { convertLegacyMessage } from '@proma/session-core'
+import { parseJsonlStrict, normalizePersistedSDKMessage } from './jsonl-parse'
+import { readAgentMessagesInWorker, readAgentSdkMessagesInWorker } from './jsonl-worker-client'
 import { assertEnabledModelForChannel } from './agent-model-selection'
 import { copyForkWorkspaceFiles } from './agent-fork-workspace-copy'
 
@@ -77,60 +79,9 @@ const MAX_SESSION_REFERENCE_LIMIT = 200
 const MAX_SESSION_REFERENCE_BODY_SCANS = 50
 const MAX_SESSION_REFERENCE_BODY_BYTES_PER_FILE = 256 * 1024
 
-interface JsonlParseError {
-  lineNumber: number
-  message: string
-}
-
-/**
- * 逐行解析 JSONL，调用方按业务场景决定容错或严格失败。
- */
-function parseJsonlLines<T>(lines: string[]): { records: T[]; errors: JsonlParseError[] } {
-  const records: T[] = []
-  const errors: JsonlParseError[] = []
-  for (let i = 0; i < lines.length; i++) {
-    try {
-      records.push(JSON.parse(lines[i]!) as T)
-    } catch (err) {
-      errors.push({
-        lineNumber: i + 1,
-        message: err instanceof Error ? err.message : String(err),
-      })
-    }
-  }
-  return { records, errors }
-}
-
-/**
- * 展示/检索类读取：跳过损坏行，保留其它可读消息。
- */
-function parseJsonlLenient<T>(lines: string[], context: string): T[] {
-  const { records, errors } = parseJsonlLines<T>(lines)
-  for (const error of errors) {
-    console.warn(`[Agent 会话] ${context} — JSONL 第 ${error.lineNumber} 行解析失败，已跳过:`, error.message)
-  }
-  return records
-}
-
-/**
- * 回退/文件恢复类读取：任何损坏行都可能破坏消息顺序或快照完整性，必须停止。
- */
-function parseJsonlStrict<T>(lines: string[], context: string): T[] {
-  const { records, errors } = parseJsonlLines<T>(lines)
-  if (errors.length > 0) {
-    const first = errors[0]!
-    throw new Error(`${context} 失败：JSONL 第 ${first.lineNumber} 行解析失败: ${first.message}`)
-  }
-  return records
-}
-
-function normalizePersistedSDKMessage(parsed: unknown): SDKMessage {
-  // 旧格式检测：AgentMessage 有 `role` 字段，SDKMessage 有 `type` 字段
-  if (parsed && typeof parsed === 'object' && 'role' in parsed && !('type' in parsed)) {
-    return convertLegacyMessage(parsed as AgentMessage)
-  }
-  return parsed as SDKMessage
-}
+/* JSONL 解析实现已下沉到 ./jsonl-parse，主进程与 worker 共用同一份。
+ * 这里只保留「读-改-写」路径需要的同步严格解析调用方，见 truncateSDKMessages /
+ * removeSDKErrorMessage：它们必须在同一个 tick 内完成读改写，不能 await。 */
 
 function migrateLegacyPermissionMode(index: AgentSessionsIndex): boolean {
   let changed = false
@@ -297,8 +248,11 @@ export function createAgentSession(
 
 /**
  * 读取会话的所有消息
+ *
+ * 走 worker：长会话 JSONL 可达数万行，同步解析会冻结主进程事件循环。
+ * 因而是异步接口，调用方需要 await。
  */
-export function getAgentSessionMessages(id: string): AgentMessage[] {
+export async function getAgentSessionMessages(id: string): Promise<AgentMessage[]> {
   const filePath = getAgentSessionMessagesPath(id)
 
   if (!existsSync(filePath)) {
@@ -306,9 +260,7 @@ export function getAgentSessionMessages(id: string): AgentMessage[] {
   }
 
   try {
-    const raw = readFileSync(filePath, 'utf-8')
-    const lines = raw.split('\n').filter((line) => line.trim())
-    return parseJsonlLenient<AgentMessage>(lines, `读取会话消息 (${id})`)
+    return await readAgentMessagesInWorker(filePath, id)
   } catch (error) {
     console.error(`[Agent 会话] 读取消息失败 (${id}):`, error)
     return []
@@ -420,7 +372,12 @@ function sanitizeOversizedMessage(msg: SDKMessage, originalLength: number): SDKM
  * 旧格式（有 `role` 字段）会被转换为近似的 SDKMessage。
  * 新格式（有 `type` 字段）直接返回。
  */
-export function getAgentSessionSDKMessages(id: string): SDKMessage[] {
+/**
+ * 读取会话的所有 SDKMessage（兼容旧 AgentMessage 格式）
+ *
+ * 同 getAgentSessionMessages，读与解析都交给 worker；这是「切换/打开会话」的热路径。
+ */
+export async function getAgentSessionSDKMessages(id: string): Promise<SDKMessage[]> {
   const filePath = getAgentSessionMessagesPath(id)
 
   if (!existsSync(filePath)) {
@@ -428,9 +385,7 @@ export function getAgentSessionSDKMessages(id: string): SDKMessage[] {
   }
 
   try {
-    const raw = readFileSync(filePath, 'utf-8')
-    const lines = raw.split('\n').filter((line) => line.trim())
-    return parseJsonlLenient<unknown>(lines, `读取 SDKMessage (${id})`).map(normalizePersistedSDKMessage)
+    return await readAgentSdkMessagesInWorker(filePath, id)
   } catch (error) {
     console.error(`[Agent 会话] 读取 SDKMessage 失败 (${id}):`, error)
     return []
@@ -645,8 +600,8 @@ export function moveSessionToWorkspace(sessionId: string, targetWorkspaceId: str
  * 仅迁移 user 和 assistant 角色的消息文本内容，
  * 工具活动、推理、附件等 Chat 特有字段不迁移。
  */
-export function migrateChatToAgentSession(conversationId: string, agentSessionId: string): void {
-  const chatMessages = getConversationMessages(conversationId)
+export async function migrateChatToAgentSession(conversationId: string, agentSessionId: string): Promise<void> {
+  const chatMessages = await getConversationMessages(conversationId)
 
   if (chatMessages.length === 0) {
     console.log(`[Agent 会话] Chat 对话无消息，跳过迁移 (${conversationId})`)

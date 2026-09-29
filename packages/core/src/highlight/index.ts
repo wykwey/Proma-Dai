@@ -1,19 +1,24 @@
 /**
  * 语法高亮模块
  *
- * 基于 Shiki 的代码语法高亮服务，支持懒加载和按需加载语言。
+ * 基于 Shiki 的代码语法高亮服务，运行在 Web Worker 中，支持懒加载、按需加载语言和按行增量 tokenize。
+ * 无 Worker 的环境（Bun/Node 测试、主进程）会自动降级到进程内实现。
  */
 
 export {
   getDisplayName,
   highlightCode,
-  highlightCodeSync,
   highlightToTokens,
+  highlightToTokensIncremental,
   isHighlighterReady,
   onHighlighterReady,
-  type HighlightOptions,
-  type HighlightResult,
-  type HighlightToken,
-  type HighlightTokensResult,
+  releaseHighlightBlock,
 } from './shiki-service.ts'
+export type {
+  HighlightIncrementalResult,
+  HighlightOptions,
+  HighlightResult,
+  HighlightToken,
+  HighlightTokensResult,
+} from './shiki-config.ts'
 export { detectLanguage } from './language-detector.ts'

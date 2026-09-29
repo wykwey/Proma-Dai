@@ -959,15 +959,6 @@ export function registerIpcHandlers(): void {
     }
   )
 
-  // 截图导出
-  ipcMain.handle(
-    IPC_CHANNELS.SCREENSHOT_CAPTURE,
-    async (_, input: { html: string; isDark: boolean; width?: number; mode: 'clipboard' | 'file'; css?: string; themeClass?: string }) => {
-      const { captureScreenshot } = await import('./lib/screenshot-service')
-      return captureScreenshot(input)
-    }
-  )
-
   // 在系统默认浏览器中打开外部链接
   ipcMain.handle(
     IPC_CHANNELS.OPEN_EXTERNAL,
@@ -1732,7 +1723,7 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(
     AGENT_IPC_CHANNELS.MIGRATE_CHAT_TO_AGENT,
     async (_, conversationId: string, agentSessionId: string): Promise<void> => {
-      migrateChatToAgentSession(conversationId, agentSessionId)
+      await migrateChatToAgentSession(conversationId, agentSessionId)
     }
   )
 
@@ -2817,7 +2808,7 @@ export function registerIpcHandlers(): void {
       if (!resolved) {
         return null
       }
-      const result = resolveAndReadFile(resolved)
+      const result = await resolveAndReadFile(resolved)
       return result
     }
   )
