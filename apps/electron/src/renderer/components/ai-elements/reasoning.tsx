@@ -12,7 +12,6 @@
  */
 
 import * as React from 'react'
-import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
@@ -24,7 +23,36 @@ import {
 } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 import { normalizeLatexDelimiters } from '@/lib/normalize-latex'
+import { StreamingMarkdown } from './streaming-markdown'
 import type { ComponentProps, ReactNode } from 'react'
+
+// ===== 推理内容的 markdown 配置（必须模块级常量，不能每次渲染新建）=====
+//
+// ReasoningContent 的 children 会被 useSmoothStream 以约 60fps 驱动。
+// 如果 remarkPlugins / components 写成内联数组或内联对象，每次渲染都是新引用，
+// StreamingMarkdown 内部的 React.memo 会全部失效，退化成每帧重解析整段推理文本。
+
+const REASONING_REMARK_PLUGINS = [remarkGfm, remarkMath]
+const REASONING_REHYPE_PLUGINS = [rehypeKatex]
+
+/** 推理内容里的链接只允许走系统浏览器打开，无需闭包任何 props，因此可以提到模块级 */
+const REASONING_MARKDOWN_COMPONENTS: ComponentProps<typeof StreamingMarkdown>['components'] = {
+  a: ({ href, children: linkChildren, ...linkProps }) => (
+    <a
+      {...linkProps}
+      href={href}
+      onClick={(e) => {
+        e.preventDefault()
+        if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+          window.electronAPI.openExternal(href)
+        }
+      }}
+      title={href}
+    >
+      {linkChildren}
+    </a>
+  ),
+}
 
 // ===== 上下文 =====
 
@@ -216,29 +244,13 @@ export const ReasoningContent = React.memo(
         {...props}
       >
         <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
-          <Markdown
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeKatex]}
-            components={{
-              a: ({ href, children: linkChildren, ...linkProps }) => (
-                <a
-                  {...linkProps}
-                  href={href}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
-                      window.electronAPI.openExternal(href)
-                    }
-                  }}
-                  title={href}
-                >
-                  {linkChildren}
-                </a>
-              ),
-            }}
+          <StreamingMarkdown
+            remarkPlugins={REASONING_REMARK_PLUGINS}
+            rehypePlugins={REASONING_REHYPE_PLUGINS}
+            components={REASONING_MARKDOWN_COMPONENTS}
           >
             {normalizeLatexDelimiters(children)}
-          </Markdown>
+          </StreamingMarkdown>
         </div>
       </CollapsibleContent>
     )

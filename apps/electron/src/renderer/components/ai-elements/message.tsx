@@ -18,7 +18,7 @@
  */
 
 import * as React from 'react'
-import Markdown, { defaultUrlTransform } from 'react-markdown'
+import { defaultUrlTransform } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
@@ -26,6 +26,7 @@ import { CalendarDays, ChevronDown, ChevronUp, Paperclip, FileText, ListTodo, Sp
 import { cn } from '@/lib/utils'
 import { shouldInspectMermaidCodeBlock, shouldRenderMermaidCodeBlock } from '@/lib/mermaid-detection'
 import { normalizeLatexDelimiters } from '@/lib/normalize-latex'
+import { StreamingMarkdown } from './streaming-markdown'
 import { copyTextToClipboard } from '@/lib/clipboard'
 import { Button } from '@/components/ui/button'
 import { ImageLightbox, type LightboxImage } from '@/components/ui/image-lightbox'
@@ -654,10 +655,19 @@ export const MessageResponse = React.memo(
       ),
     }), [basePath, basePaths])
 
-    const renderedMarkdown = (remarkPlugins?.includes(remarkMentions)
-      ? normalizeNamedReferenceDelimiters(children)
-      : children
-    ).replace(/<!--PROMA_AUTOMATION:[\s\S]*?-->/g, '').trim()
+    const renderedMarkdown = React.useMemo(() => (
+      (remarkPlugins?.includes(remarkMentions)
+        ? normalizeNamedReferenceDelimiters(children)
+        : children
+      ).replace(/<!--PROMA_AUTOMATION:[\s\S]*?-->/g, '').trim()
+    ), [children, remarkPlugins])
+
+    // LaTeX 归一化先于切分：它会把跨行的 \[...\] 变成 $$...$$，
+    // 先把整体归一化再交给 StreamingMarkdown 切块，跨行公式才不会被拆开。
+    const normalizedMarkdown = React.useMemo(
+      () => normalizeLatexDelimiters(renderedMarkdown),
+      [renderedMarkdown]
+    )
 
     return (
       <div
@@ -669,14 +679,14 @@ export const MessageResponse = React.memo(
           className
         )}
       >
-        <Markdown
+        <StreamingMarkdown
+          components={components}
           remarkPlugins={mergedRemarkPlugins}
           rehypePlugins={REHYPE_PLUGINS}
           urlTransform={mentionUrlTransform}
-          components={components}
         >
-          {normalizeLatexDelimiters(renderedMarkdown)}
-        </Markdown>
+          {normalizedMarkdown}
+        </StreamingMarkdown>
       </div>
     )
   },
